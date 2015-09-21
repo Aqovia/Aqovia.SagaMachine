@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.Utilities.SagaMachin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.Utilities.SagaMachine.Tests", "Aqovia.Utilities.SagaMachine.Tests\Aqovia.Utilities.SagaMachine.Tests.csproj", "{815EBB8E-B3A7-4E0F-A164-DCE67EB406F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.Utilities.SagaMachine.IntegrationTests", "Aqovia.Utilities.SagaMachine.IntegrationTests\Aqovia.Utilities.SagaMachine.IntegrationTests.csproj", "{1F0A6D73-A832-4FB8-9DBF-744B07E6D50F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{815EBB8E-B3A7-4E0F-A164-DCE67EB406F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{815EBB8E-B3A7-4E0F-A164-DCE67EB406F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{815EBB8E-B3A7-4E0F-A164-DCE67EB406F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F0A6D73-A832-4FB8-9DBF-744B07E6D50F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F0A6D73-A832-4FB8-9DBF-744B07E6D50F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F0A6D73-A832-4FB8-9DBF-744B07E6D50F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F0A6D73-A832-4FB8-9DBF-744B07E6D50F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

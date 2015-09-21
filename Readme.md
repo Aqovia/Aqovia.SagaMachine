@@ -28,7 +28,7 @@ We are assuming you're using the [Nimbus Seed service] as a base for your projec
 		</hosts>
 	</redisCacheClient>
 ```
-* Implement the _ISagaMessageIdentifier_ Interface in all your saga Message contracts 
+* Implement the _ISagaMessageIdentifier_ Interface in all your saga Message contracts. Implement IBusEvent for it to work with Nimbus 
 ```
 	public class ProvisionCspService : ISagaMessageIdentifier, IBusEvent
 		{
@@ -50,7 +50,7 @@ We are assuming you're using the [Nimbus Seed service] as a base for your projec
 			{
 				foreach (var messsage in messsages)
 				{
-					await _bus.Publish(messsage);
+					await _bus.Publish((IBusEvent)messsage);
 				}
 			}
 ```
@@ -131,3 +131,31 @@ Any message that should result in new log entries should call .LogIf() - This fi
 The final action should always be .Execute().
 
 All the above action-If methods have a non If equivalent without the second boolean lamda. You can use this if you always want the associated action to be performed for all of the matching messages, regardless of content or saga state.
+
+## Smoke tests
+
+Since this has Redis as en external dependency, add a smoke test to your project in order to check the connectivity:
+```
+	var redisCacheTask = Task.Run<MessageBase>(() =>
+	{           
+		try
+		{
+			TimeSpan pingResults = _redisKeyValueStore.Ping();
+
+			return (new SuccessMessage
+			{
+				Message = string.Format("Success accessing redis cache server (ping reply took {0} ms)", pingResults.Milliseconds)
+			});
+		}
+		catch (Exception ex)
+		{
+			return (new ErrorMessage
+			{
+				Message = "There was an exception accessing redis cache server" + ex
+			});
+		}
+	});
+
+
+	return SmoketestRunner.RunAllTests(timeoutSeconds, new[] { redisCacheTask });
+```
