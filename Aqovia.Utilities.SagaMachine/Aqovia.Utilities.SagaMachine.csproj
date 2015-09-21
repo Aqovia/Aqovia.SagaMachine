@@ -53,8 +53,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConfigurationSettings.cs" />
-    <Compile Include="IConfigurationSettings.cs" />
     <Compile Include="ISagaDefined.cs" />
     <Compile Include="ISagaIdentifier.cs" />
     <Compile Include="ISagaMachine.cs" />

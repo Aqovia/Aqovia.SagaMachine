@@ -9,20 +9,20 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
     public class RedisKeyValueStore : IKeyValueStore
     {
 
-        private readonly IConfigurationSettings _configuration;
+        private readonly RedisCachingSectionHandler _redisConfiguration;
         private readonly ConnectionMultiplexer _redis;
 
-        public RedisKeyValueStore(IConfigurationSettings configuration)
+        public RedisKeyValueStore()
         {
-            _configuration = configuration;
+            _redisConfiguration = RedisCachingSectionHandler.GetConfig();
             var configurationOptions = new ConfigurationOptions
             {
-                ConnectTimeout = _configuration.PersistentRedisHost.ConnectTimeout,
-                Ssl = _configuration.PersistentRedisHost.Ssl,
+                ConnectTimeout = _redisConfiguration.ConnectTimeout,
+                Ssl = _redisConfiguration.Ssl,
 
             };
 
-            foreach (RedisHost redisHost in _configuration.PersistentRedisHost.RedisHosts)
+            foreach (RedisHost redisHost in _redisConfiguration.RedisHosts)
             {
                 configurationOptions.EndPoints.Add(redisHost.Host, redisHost.CachePort);
             }
@@ -32,7 +32,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
         private IDatabase GetDatabase()
         {            
-            IDatabase db = _redis.GetDatabase(_configuration.PersistentRedisHost.Database);            
+            IDatabase db = _redis.GetDatabase(_redisConfiguration.Database);            
             return db;
         }
 
