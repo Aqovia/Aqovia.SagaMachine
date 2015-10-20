@@ -108,9 +108,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
         public void Dispose()
         {
-            if (_redis.IsConnected)
-                _redis.Close();
-            
+            _redis.Close();
         }
     }
 }
