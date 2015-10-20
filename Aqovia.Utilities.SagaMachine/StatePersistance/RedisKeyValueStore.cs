@@ -6,7 +6,7 @@ using StackExchange.Redis.Extensions.Core.Configuration;
 
 namespace Aqovia.Utilities.SagaMachine.StatePersistance
 {
-    public class RedisKeyValueStore : IKeyValueStore
+    public class RedisKeyValueStore : IKeyValueStore, IDisposable
     {
 
         private readonly RedisCachingSectionHandler _redisConfiguration;
@@ -105,6 +105,12 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
             IDatabase db = GetDatabase();
             db.KeyDelete(key);
         }
-        
+
+        public void Dispose()
+        {
+            if (_redis.IsConnected)
+                _redis.Close();
+            
+        }
     }
 }

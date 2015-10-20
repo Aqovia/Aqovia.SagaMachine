@@ -123,6 +123,7 @@ namespace Aqovia.Utilities.SagaMachine.IntegrationTests
             {
                 _store.Remove(key);
             }
+            _store.Dispose();
         }
     }
 }
