@@ -14,8 +14,26 @@ namespace Aqovia.Utilities.SagaMachine.Tests
     {
         private readonly Mock<IKeyValueStore> _keyValueStoreMock;
         private readonly Mock<Func<IEnumerable<ISagaMessageIdentifier>, Task>> _mockPublisher;
-        private readonly SagaMachine<TestState> _sagaMachine;
+        private SagaMachine<TestState> _sagaMachine;
+        private readonly Mock<IEventLoggerFactory> _mockEventloggerFactory;
         private Mock<IEventLogger> _mockEventLogger;
+
+        private class MessagePublisherFake
+        {
+            public async Task PublishMessage(IEnumerable<ISagaMessageIdentifier> messsages)
+            {
+                foreach (var message in messsages)
+                {
+                    if (message is StateMachineTests.SomeOtherMessage)
+                    {
+                        await Task.Delay(1000);
+                        throw new Exception();
+                    }
+
+                    await Task.Delay(500);
+                }
+            }
+        }
 
         private class TestState : ISagaIdentifier
         {
@@ -51,10 +69,10 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             _keyValueStoreMock = new Mock<IKeyValueStore>();
             _mockPublisher = new Mock<Func<IEnumerable<ISagaMessageIdentifier>, Task>>();
-            var mockEventloggerFactory = new Mock<IEventLoggerFactory>();
+            _mockEventloggerFactory = new Mock<IEventLoggerFactory>();
             _mockEventLogger = new Mock<IEventLogger>();
-            mockEventloggerFactory.Setup(o => o.GetRequestEventLogger(It.IsAny<string>())).Returns(_mockEventLogger.Object);
-            _sagaMachine = new SagaMachine<TestState>(_keyValueStoreMock.Object, _mockPublisher.Object, mockEventloggerFactory.Object);
+            _mockEventloggerFactory.Setup(o => o.GetRequestEventLogger(It.IsAny<string>())).Returns(_mockEventLogger.Object);
+            _sagaMachine = new SagaMachine<TestState>(_keyValueStoreMock.Object, _mockPublisher.Object, _mockEventloggerFactory.Object);
         }
 
         [Fact(DisplayName = "Should save state from InitialiseState")]
@@ -338,5 +356,38 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             _keyValueStoreMock.Verify(o => o.Remove(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
+        [Fact]
+        public void SagaMachine_Should_Not_Stop_Saga_If_An_Exception_Happens()
+        {
+            //Arrange
+            _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
+                .Returns(new HashedValue<TestState>
+                {
+                    Hash = Guid.Empty.ToString(),
+                    Value = new TestState()
+                });
+
+            // We need the below to set the return value
+            _keyValueStoreMock.Setup(kv => kv.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
+            var messagePublisher = new MessagePublisherFake();
+
+            //Act
+            _sagaMachine = new SagaMachine<TestState>(_keyValueStoreMock.Object, messagePublisher.PublishMessage, _mockEventloggerFactory.Object);
+            _sagaMachine
+               .WithMessage<HelloMessage>((proccess, msg) => proccess
+                   .Publish((msgForPub, state) => new[] { new GoodbyeMessage() })
+                   .Publish((msgForPub, state) => new[] { new SomeOtherMessage() })
+                   .StopSaga()
+                   .Execute()
+               );
+
+            var exception = Assert.ThrowsAnyAsync<Exception>(() => _sagaMachine.Handle(new HelloMessage()));
+            exception.Wait();
+
+            //Assert
+            _keyValueStoreMock.Verify(o => o.TrySetValue(It.IsAny<string>(), It.IsAny<TestState>(), It.IsAny<string>()), Times.Never);
+            _keyValueStoreMock.Verify(kv => kv.Remove(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
     }
 }
