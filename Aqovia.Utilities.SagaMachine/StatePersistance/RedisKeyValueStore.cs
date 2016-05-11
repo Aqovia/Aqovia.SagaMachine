@@ -106,6 +106,54 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
             db.KeyDelete(key);
         }
 
+
+        /// <summary>
+        /// Request lock against key value element
+        /// Lock lifespan 500 milliseconds
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="lockToken"></param>
+        /// <returns></returns>
+        public bool TakeLockWithShortTimeSpan(string key, out string lockToken)
+        {
+            lockToken = Guid.NewGuid().ToString();
+
+            var db = GetDatabase();
+            var transac = db.CreateTransaction();
+            transac.AddCondition(Condition.KeyExists(key));
+
+            return transac.LockTakeAsync(key, lockToken, TimeSpan.FromMilliseconds(500)).Result;
+        }
+
+        /// <summary>
+        /// Request lock against key value element
+        /// Lock has lifespan specified in milliseconds
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="lockToken"></param>
+        /// <param name="milliseconds"></param>
+        /// <returns></returns>
+        public bool TakeLock(string key, out string lockToken, double milliseconds)
+        {
+            lockToken = Guid.NewGuid().ToString();
+
+            var db = GetDatabase();
+            var transac = db.CreateTransaction();
+            transac.AddCondition(Condition.KeyExists(key));
+
+            return transac.LockTakeAsync(key, lockToken, TimeSpan.FromMilliseconds(milliseconds)).Result;
+        }
+
+        public bool ReleaseLock(string key, string lockToken)
+        {
+            var db = GetDatabase();
+
+            var transac = db.CreateTransaction();
+            transac.AddCondition(Condition.KeyExists(key));
+
+            return transac.LockReleaseAsync(key, lockToken).Result;
+        }
+
         public void Dispose()
         {
             _redis.Close();

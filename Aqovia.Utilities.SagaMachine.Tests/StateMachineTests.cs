@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Aqovia.Utilities.SagaMachine.Logging;
 using Aqovia.Utilities.SagaMachine.StatePersistance;
@@ -82,6 +83,10 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             Guid thisId = Guid.NewGuid();
             _keyValueStoreMock.Setup(o => o.TrySetValue(thisId.ToString(), It.IsAny<TestState>(), string.Empty)).Returns(true);
 
+            string dummyLockToken;
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(thisId.ToString(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(thisId.ToString(), It.IsAny<string>())).Returns(true);
+
             _sagaMachine
                 .WithMessage<HelloMessage>((proccess, msg) => proccess
                     .InitialiseState((hello) => new TestState
@@ -138,6 +143,10 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldPublishConditionalMessages()
         {
             //Arrange
+            string dummyLockToken;
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
                 {
@@ -163,6 +172,10 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldLogConditionaly()
         {
             //Arrange
+            string dummyLockToken;
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
                 {
@@ -190,6 +203,9 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             //Arrange
             Guid sagaInstanceId = Guid.NewGuid();
+            string dummyLockToken;
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(sagaInstanceId.ToString(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(sagaInstanceId.ToString(), It.IsAny<string>())).Returns(true);
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
                 {
@@ -217,6 +233,10 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldRespondToCorrectMessages()
         {
             //Arrange
+            string dummyLockToken;
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
                 {
@@ -245,6 +265,10 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldSaveMutatedState()
         {
             //Arrange
+            string dummyLockToken;
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
                 {
@@ -314,6 +338,14 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             _keyValueStoreMock.Setup(o => o.TrySetValue<TestState>(It.IsAny<string>(), It.IsAny<TestState>(), It.IsAny<string>()))
                 .Returns((string key, TestState value, string hash) => hash == "124");
 
+            var locksReturnSequence = new Queue<bool>();
+            locksReturnSequence.Enqueue(false);
+            locksReturnSequence.Enqueue(true);
+            string dummyLockToken;
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(locksReturnSequence.Dequeue);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(locksReturnSequence.Dequeue);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
 
             _sagaMachine
                .WithMessage<HelloMessage>((proccess, msg) => proccess
@@ -338,6 +370,10 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldDeleteStateAtEndOfSaga()
         {
             //Arrange
+            string dummyLockToken;
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
             _keyValueStoreMock.Setup(o => o.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
             _sagaMachine
                .WithMessage<HelloMessage>((proccess, msg) => proccess
@@ -360,6 +396,10 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public void SagaMachine_Should_Not_Stop_Saga_If_An_Exception_Happens()
         {
             //Arrange
+            string dummyLockToken;
+            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
                 {
@@ -388,6 +428,53 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             //Assert
             _keyValueStoreMock.Verify(o => o.TrySetValue(It.IsAny<string>(), It.IsAny<TestState>(), It.IsAny<string>()), Times.Never);
             _keyValueStoreMock.Verify(kv => kv.Remove(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public void SagaMachine_RequestLock_When_Executed()
+        {
+            // Arrange
+            string dummyToken;
+            _keyValueStoreMock.Setup(kv => kv.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyToken))
+                .Returns(true);
+
+            _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
+                .Returns(new HashedValue<TestState>
+                {
+                    Hash = Guid.Empty.ToString(),
+                    Value = new TestState()
+                });
+
+            // Act
+            _sagaMachine.WithMessage<HelloMessage>((proccess, msg) => proccess.Execute());
+            _sagaMachine.Handle(new HelloMessage()).Wait();
+
+            // Assert
+            
+            _keyValueStoreMock.Verify(kv => kv.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyToken), Times.Once);
+        }
+
+        [Fact]
+        public void SagaMachine_WhenSucessfullyAcquiredLock_ReleaseLock()
+        {
+            // Arrange
+            string dummyToken = "unique-token-id";
+            _keyValueStoreMock.Setup(kv => kv.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyToken))
+                .Returns(true);
+
+            _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
+                .Returns(new HashedValue<TestState>
+                {
+                    Hash = Guid.Empty.ToString(),
+                    Value = new TestState()
+                });
+
+            // Act
+            _sagaMachine.WithMessage<HelloMessage>((proccess, msg) => proccess.Execute());
+            _sagaMachine.Handle(new HelloMessage()).Wait();
+
+            // Assert
+            _keyValueStoreMock.Verify(kv => kv.ReleaseLock(It.IsAny<string>(), dummyToken), Times.Once);
         }
     }
 }
