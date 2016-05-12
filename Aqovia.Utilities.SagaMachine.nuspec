@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>Aqovia.SagaMachine</id>
+    <version>$version$</version>
+    <authors>$author$</authors>
+	<description>$description$</description>
+    <dependencies>
+      <dependency id="Newtonsoft.Json" version="7.0.1" />
+      <dependency id="StackExchange.Redis" version="1.0.481" />
+	  <dependency id="StackExchange.Redis.Extensions.Core" version="1.1.13.0" />
+    </dependencies> 
+  </metadata>
+</package>

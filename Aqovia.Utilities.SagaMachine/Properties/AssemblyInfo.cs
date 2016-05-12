@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Aqovia.Utilities.SagaMachine")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("State machine for orchestrating sagas across a message bus using Redis for state persistence.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Aqovia")]
 [assembly: AssemblyProduct("Aqovia.Utilities.SagaMachine")]
