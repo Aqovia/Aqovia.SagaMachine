@@ -8,6 +8,8 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 {
     public class RedisKeyValueStore : IKeyValueStore, IDisposable
     {
+        private const double DefaultLockExpiryTime = 500;
+
 
         private readonly RedisCachingSectionHandler _redisConfiguration;
         private readonly ConnectionMultiplexer _redis;
@@ -114,15 +116,9 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         /// <param name="key"></param>
         /// <param name="lockToken"></param>
         /// <returns></returns>
-        public bool TakeLockWithShortTimeSpan(string key, out string lockToken)
+        public bool TakeLockWithDefaultExpiryTime(string key, out string lockToken)
         {
-            lockToken = Guid.NewGuid().ToString();
-
-            var db = GetDatabase();
-            var transac = db.CreateTransaction();
-            transac.AddCondition(Condition.KeyExists(key));
-
-            return transac.LockTakeAsync(key, lockToken, TimeSpan.FromMilliseconds(500)).Result;
+            return TakeLock(key, out lockToken, DefaultLockExpiryTime);
         }
 
         /// <summary>

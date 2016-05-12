@@ -128,7 +128,7 @@ namespace Aqovia.Utilities.SagaMachine
             LoadStateIfNecessary();
 
             string uniqueLockToken;
-            var isLocked = _keyValueStore.TakeLockWithShortTimeSpan(_currentState.Value.SagaInstanceId.ToString(), out uniqueLockToken);
+            var isLocked = _keyValueStore.TakeLockWithDefaultExpiryTime(_currentState.Value.SagaInstanceId.ToString(), out uniqueLockToken);
             if (!isLocked)
             {
                 throw new SagaHasConcurrentLockException("A concurrent SagaMachine has already locked the saga");

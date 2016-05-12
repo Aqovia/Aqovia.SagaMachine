@@ -19,23 +19,6 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         private readonly Mock<IEventLoggerFactory> _mockEventloggerFactory;
         private Mock<IEventLogger> _mockEventLogger;
 
-        private class MessagePublisherFake
-        {
-            public async Task PublishMessage(IEnumerable<ISagaMessageIdentifier> messsages)
-            {
-                foreach (var message in messsages)
-                {
-                    if (message is StateMachineTests.SomeOtherMessage)
-                    {
-                        await Task.Delay(1000);
-                        throw new Exception();
-                    }
-
-                    await Task.Delay(500);
-                }
-            }
-        }
-
         private class TestState : ISagaIdentifier
         {
             public Guid SagaInstanceId { get; set; }
@@ -66,6 +49,20 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         }
 
 
+        private static async Task PublishMessageThrowsExceptionWhenGoodbyeMessage(IEnumerable<ISagaMessageIdentifier> messsages)
+        {
+            foreach (var message in messsages)
+            {
+                if (message is GoodbyeMessage)
+                {
+                    await Task.Delay(1000);
+                    throw new Exception();
+                }
+
+                await Task.Delay(500);
+            }
+        }
+
         public StateMachineTests()
         {
             _keyValueStoreMock = new Mock<IKeyValueStore>();
@@ -84,7 +81,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             _keyValueStoreMock.Setup(o => o.TrySetValue(thisId.ToString(), It.IsAny<TestState>(), string.Empty)).Returns(true);
 
             string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(thisId.ToString(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(thisId.ToString(), out dummyLockToken)).Returns(true);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(thisId.ToString(), It.IsAny<string>())).Returns(true);
 
             _sagaMachine
@@ -144,7 +141,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             //Arrange
             string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
@@ -173,7 +170,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             //Arrange
             string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
@@ -204,7 +201,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             //Arrange
             Guid sagaInstanceId = Guid.NewGuid();
             string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(sagaInstanceId.ToString(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(sagaInstanceId.ToString(), out dummyLockToken)).Returns(true);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(sagaInstanceId.ToString(), It.IsAny<string>())).Returns(true);
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
@@ -234,7 +231,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             //Arrange
             string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
@@ -266,7 +263,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             //Arrange
             string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
@@ -342,8 +339,8 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             locksReturnSequence.Enqueue(false);
             locksReturnSequence.Enqueue(true);
             string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(locksReturnSequence.Dequeue);
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(locksReturnSequence.Dequeue);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(locksReturnSequence.Dequeue);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(locksReturnSequence.Dequeue);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
 
@@ -371,7 +368,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             //Arrange
             string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
             _keyValueStoreMock.Setup(o => o.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
@@ -397,7 +394,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             //Arrange
             string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyLockToken)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
@@ -410,14 +407,11 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             // We need the below to set the return value
             _keyValueStoreMock.Setup(kv => kv.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
-            var messagePublisher = new MessagePublisherFake();
-
             //Act
-            _sagaMachine = new SagaMachine<TestState>(_keyValueStoreMock.Object, messagePublisher.PublishMessage, _mockEventloggerFactory.Object);
+            _sagaMachine = new SagaMachine<TestState>(_keyValueStoreMock.Object, PublishMessageThrowsExceptionWhenGoodbyeMessage, _mockEventloggerFactory.Object);
             _sagaMachine
                .WithMessage<HelloMessage>((proccess, msg) => proccess
                    .Publish((msgForPub, state) => new[] { new GoodbyeMessage() })
-                   .Publish((msgForPub, state) => new[] { new SomeOtherMessage() })
                    .StopSaga()
                    .Execute()
                );
@@ -435,7 +429,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             // Arrange
             string dummyToken;
-            _keyValueStoreMock.Setup(kv => kv.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyToken))
+            _keyValueStoreMock.Setup(kv => kv.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyToken))
                 .Returns(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
@@ -451,7 +445,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             // Assert
             
-            _keyValueStoreMock.Verify(kv => kv.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyToken), Times.Once);
+            _keyValueStoreMock.Verify(kv => kv.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyToken), Times.Once);
         }
 
         [Fact]
@@ -459,7 +453,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         {
             // Arrange
             string dummyToken = "unique-token-id";
-            _keyValueStoreMock.Setup(kv => kv.TakeLockWithShortTimeSpan(It.IsAny<string>(), out dummyToken))
+            _keyValueStoreMock.Setup(kv => kv.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyToken))
                 .Returns(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
