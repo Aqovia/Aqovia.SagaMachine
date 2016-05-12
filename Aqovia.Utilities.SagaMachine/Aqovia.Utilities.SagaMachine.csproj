@@ -73,6 +73,7 @@
     <Compile Include="SagaException.cs" />
     <Compile Include="SagaMachine.cs" />
     <Compile Include="SagaStateStaleException.cs" />
+    <Compile Include="SagaHasConcurrentLockException.cs" />
     <Compile Include="StatePersistance\HashedValue.cs" />
     <Compile Include="StatePersistance\IKeyValueStore.cs" />
     <Compile Include="StatePersistance\RedisKeyValueStore.cs" />

@@ -43,12 +43,19 @@ namespace Aqovia.Utilities.SagaMachine
                     _processRegistry[typeof(TMessage)](message);
                     return;
                 }
-                catch (SagaStateStaleException)
+                catch (SagaException ex)
                 {
-                    //Key value store we read was stale. Try again.
-                    retryFailLimit--;
-                    if (retryFailLimit < 1)
+                    if (ex is SagaStateStaleException || ex is SagaHasConcurrentLockException)
+                    {
+                        //Key value store we read was stale. Try again.
+                        retryFailLimit--;
+                        if (retryFailLimit < 1)
+                            throw;
+                    }
+                    else
+                    {
                         throw;
+                    }
                 }
             }            
         }

@@ -125,19 +125,15 @@ namespace Aqovia.Utilities.SagaMachine
 
         public ISagaDefined Execute()
         {
-            if (_needToDeleteState)
+            LoadStateIfNecessary();
+
+            string uniqueLockToken;
+            var isLocked = _keyValueStore.TakeLockWithDefaultExpiryTime(_currentState.Value.SagaInstanceId.ToString(), out uniqueLockToken);
+            if (!isLocked)
             {
-                if (!_keyValueStore.Remove(_currentState.Value.SagaInstanceId.ToString(), _currentState.Hash))
-                {
-                    throw new SagaStateStaleException("State has since changed. Can't remove");
-                }                
-            }
-            else
-            {
-                SaveStateIfNecessary();
+                throw new SagaHasConcurrentLockException("A concurrent SagaMachine has already locked the saga");
             }
 
-            
             foreach (var logStateMessage in _logState.GetLogMessages())
             {
                 IEventLogger logger = _eventLoggerFactory.GetRequestEventLogger(_incomingMessage.GetType().Name + "SagaMessage");
@@ -159,11 +155,29 @@ namespace Aqovia.Utilities.SagaMachine
                 else
                 {
                     logger.LogError(logStateMessage.Message);
-                }       
+                }
             }
 
+            try
+            {
+                _messagePublisher(_messagesToPublish).Wait();
 
-            _messagePublisher(_messagesToPublish).Wait();
+                if (_needToDeleteState)
+                {
+                    if (!_keyValueStore.Remove(_currentState.Value.SagaInstanceId.ToString(), _currentState.Hash))
+                    {
+                        throw new SagaStateStaleException("State has since changed. Can't remove");
+                    }
+                }
+                else
+                {
+                    SaveStateIfNecessary();
+                }
+            }
+            finally
+            {
+                _keyValueStore.ReleaseLock(_currentState.Value.SagaInstanceId.ToString(), uniqueLockToken);
+            }
             
             return null;
         }
