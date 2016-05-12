@@ -48,21 +48,6 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             public Guid SagaInstanceId { get; set; }
         }
 
-
-        private static async Task PublishMessageThrowsExceptionWhenGoodbyeMessage(IEnumerable<ISagaMessageIdentifier> messsages)
-        {
-            foreach (var message in messsages)
-            {
-                if (message is GoodbyeMessage)
-                {
-                    await Task.Delay(1000);
-                    throw new Exception();
-                }
-
-                await Task.Delay(500);
-            }
-        }
-
         public StateMachineTests()
         {
             _keyValueStoreMock = new Mock<IKeyValueStore>();
@@ -407,8 +392,22 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             // We need the below to set the return value
             _keyValueStoreMock.Setup(kv => kv.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
+            Func<IEnumerable<ISagaMessageIdentifier>, Task> publisher = async (messages) =>
+            {
+                foreach (var message in messages)
+                {
+                    if (message is GoodbyeMessage)
+                    {
+                        await Task.Delay(1000);
+                        throw new Exception();
+                    }
+
+                    await Task.Delay(500);
+                }
+            };
+
             //Act
-            _sagaMachine = new SagaMachine<TestState>(_keyValueStoreMock.Object, PublishMessageThrowsExceptionWhenGoodbyeMessage, _mockEventloggerFactory.Object);
+            _sagaMachine = new SagaMachine<TestState>(_keyValueStoreMock.Object, publisher, _mockEventloggerFactory.Object);
             _sagaMachine
                .WithMessage<HelloMessage>((proccess, msg) => proccess
                    .Publish((msgForPub, state) => new[] { new GoodbyeMessage() })
