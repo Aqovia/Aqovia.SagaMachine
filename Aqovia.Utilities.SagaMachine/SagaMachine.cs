@@ -30,7 +30,7 @@ namespace Aqovia.Utilities.SagaMachine
 
         public async Task Handle<TMessage>(TMessage message) where TMessage : ISagaMessageIdentifier
         {
-            await Task.Run(() => ProcessMessage(message));
+            await Task.Run(() => ProcessMessage(message)).ConfigureAwait(false);
         }
 
         private void ProcessMessage<TMessage>(TMessage message) where TMessage : ISagaMessageIdentifier
