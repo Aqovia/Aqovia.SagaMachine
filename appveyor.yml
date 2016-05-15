@@ -30,6 +30,7 @@ before_build:
 configuration: Release
 
 build:
+  parallel: true
   verbosity: minimal
   
 deploy:
