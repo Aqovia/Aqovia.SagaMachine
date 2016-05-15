@@ -18,6 +18,7 @@ assembly_info:
   assembly_informational_version: '{version}'
   
 init:
+# https://www.appveyor.com/docs/how-to/rdp-to-build-worker
 - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 before_build:
@@ -37,3 +38,7 @@ deploy:
     secure: 8nOJ8wjmitnOcDwlirh5QLHECezb9AQgSzbXbBsNkOBGhtOxz1WDQKBDOZXIhoM9
   on:
     branch: master
+    
+on_finish:
+# https://www.appveyor.com/docs/how-to/rdp-to-build-worker
+- ps: If ($env:APPVEYOR_REPO_BRANCH -eq "ci-debug") { $blockRdp = $true }
