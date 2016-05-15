@@ -9,6 +9,9 @@ assembly_info:
   assembly_file_version: '{version}'
   assembly_informational_version: '{version}'
 before_build:
+- choco install redis-64
+- redis-server --service-install
+- redis-server --service-start
 - nuget restore
 build:
   verbosity: minimal
