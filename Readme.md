@@ -1,10 +1,13 @@
 # Saga Machine utility
 
-A utility for orchestrating sagas across a  message bus.
+A utility for orchestrating sagas across a message bus, using Redis for state persistence.
+
+[![Build status](https://ci.appveyor.com/api/projects/status/pi0fyl6v11c899lo/branch/master?svg=true)](https://ci.appveyor.com/project/aqovia/aqovia-sagamachine/branch/master)
+
 
 ## Getting started
 
-We are assuming you're using the [Nimbus Seed service] as a base for your project
+We are assuming you're using the [Nimbus](https://github.com/NimbusAPI/Nimbus) Seed service as a base for your project
 
 * Install the latest *Aqovia.Utilities.SagaMachine.[Latest Version].nupkg* package
 * Register the Aqovia Logger in your IOC container
