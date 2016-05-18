@@ -125,6 +125,11 @@ namespace Aqovia.Utilities.SagaMachine
 
         public ISagaDefined Execute()
         {
+            var sagaDefined = Task.Run( () => ExecuteAsync());
+            return sagaDefined.Result;
+        }
+        public async Task<ISagaDefined> ExecuteAsync()
+        {
             LoadStateIfNecessary();
 
             string uniqueLockToken;
@@ -160,7 +165,7 @@ namespace Aqovia.Utilities.SagaMachine
 
             try
             {
-                _messagePublisher(_messagesToPublish).Wait();
+                await _messagePublisher(_messagesToPublish).ConfigureAwait(false);
 
                 if (_needToDeleteState)
                 {

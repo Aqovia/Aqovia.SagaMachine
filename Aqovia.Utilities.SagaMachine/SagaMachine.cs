@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Aqovia.Utilities.SagaMachine.Logging;
 using Aqovia.Utilities.SagaMachine.StatePersistance;
@@ -43,9 +44,9 @@ namespace Aqovia.Utilities.SagaMachine
                     _processRegistry[typeof(TMessage)](message);
                     return;
                 }
-                catch (SagaException ex)
+                catch (AggregateException ex)
                 {
-                    if (ex is SagaStateStaleException || ex is SagaHasConcurrentLockException)
+                    if(ex.InnerExceptions.All( e => e is SagaStateStaleException || e is SagaHasConcurrentLockException))
                     {
                         //Key value store we read was stale. Try again.
                         retryFailLimit--;
