@@ -127,7 +127,7 @@ namespace Aqovia.Utilities.SagaMachine
         {
             return ExecuteAsync().Result;
         }
-        public async Task<ISagaDefined> ExecuteAsync()
+        private async Task<ISagaDefined> ExecuteAsync()
         {
             LoadStateIfNecessary();
 
