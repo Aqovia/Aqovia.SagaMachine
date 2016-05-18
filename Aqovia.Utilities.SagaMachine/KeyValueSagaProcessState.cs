@@ -125,8 +125,7 @@ namespace Aqovia.Utilities.SagaMachine
 
         public ISagaDefined Execute()
         {
-            var sagaDefined = Task.Run( () => ExecuteAsync());
-            return sagaDefined.Result;
+            return ExecuteAsync().Result;
         }
         public async Task<ISagaDefined> ExecuteAsync()
         {
