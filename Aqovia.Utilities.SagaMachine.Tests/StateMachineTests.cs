@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Aqovia.Utilities.SagaMachine.Logging;
 using Aqovia.Utilities.SagaMachine.StatePersistance;
@@ -71,7 +70,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             _sagaMachine
                 .WithMessage<HelloMessage>((proccess, msg) => proccess
-                    .InitialiseState((hello) => new TestState
+                    .InitialiseState(hello => new TestState
                     {
                         SomeStateVariable = hello.Message,
                         SagaInstanceId = thisId
@@ -92,33 +91,23 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         [Fact(DisplayName = "Should not allow InitialiseState without Id")]
         public void SagaMachineShouldHaveInitialiseStateId()
         {
-            //Arrange
-            Guid thisId = Guid.NewGuid();
-
             _sagaMachine
                 .WithMessage<HelloMessage>((proccess, msg) => proccess
-                    .InitialiseState((hello) => new TestState
+                    .InitialiseState(hello => new TestState
                     {
                         SomeStateVariable = hello.Message
                     })
                     .Execute()
                 );
 
-            //Act
-
-            //Assert
-            Action shouldThrow = () =>
+            Func<Task> act = async () =>
             {
-
-                _sagaMachine.Handle(new HelloMessage
+                await _sagaMachine.Handle(new HelloMessage
                 {
                     Message = "Initialised"
-                }).Wait();
+                }).ConfigureAwait(false);
             };
-            shouldThrow.ShouldThrow<SagaException>();
-
-
-
+            act.ShouldThrow<SagaException>();
         }
 
         [Fact(DisplayName = "Should only publish conditional met messages")]
@@ -144,7 +133,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             //Act
 
-            await _sagaMachine.Handle(new HelloMessage { });
+            await _sagaMachine.Handle(new HelloMessage());
             //Assert
             _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.OfType<GoodbyeMessage>().Any())), Times.Once);
             _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.OfType<DontSendMessage>().Any())), Times.Never);
@@ -173,7 +162,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             //Act
 
-            await _sagaMachine.Handle(new HelloMessage { });
+            await _sagaMachine.Handle(new HelloMessage());
             //Assert
 
             _mockEventLogger.Verify(o => o.LogInfo(It.Is<string>(m => m == "Should log this")), Times.Once);
@@ -199,14 +188,14 @@ namespace Aqovia.Utilities.SagaMachine.Tests
                 });
             _sagaMachine
                .WithMessage<HelloMessage>((proccess, msg) => proccess
-                   .PublishIf((msgForPub, state) => new[] { new GoodbyeMessage { } }, (msgForCond, state) => true)
-                   .Publish((msgForPub, state) => new[] { new GoodbyeMessage { } })
+                   .PublishIf((msgForPub, state) => new[] { new GoodbyeMessage()}, (msgForCond, state) => true)
+                   .Publish((msgForPub, state) => new[] { new GoodbyeMessage()})
                    .Execute()
                );
 
             //Act
 
-            await _sagaMachine.Handle(new HelloMessage { });
+            await _sagaMachine.Handle(new HelloMessage());
             //Assert
             _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.All(o => o.SagaInstanceId == sagaInstanceId))), Times.Once);
         }
@@ -238,7 +227,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             //Act
 
-            await _sagaMachine.Handle(new SomeOtherMessage { });
+            await _sagaMachine.Handle(new SomeOtherMessage());
             //Assert
             _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.OfType<GoodbyeMessage>().Any())), Times.Never);
         }
@@ -282,7 +271,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             //Act
 
-            await _sagaMachine.Handle(new HelloMessage { });
+            await _sagaMachine.Handle(new HelloMessage());
             //Assert
             _keyValueStoreMock.Verify(o => o.TrySetValue(It.IsAny<string>(), It.Is<TestState>(state => state.SomeStateVariable == "Changed"), It.IsAny<string>()), Times.Once);
             _keyValueStoreMock.Verify(o => o.TrySetValue(It.IsAny<string>(), It.Is<TestState>(state => state.DontTouchStateVariable == "Touched"), It.IsAny<string>()), Times.Never);
@@ -317,7 +306,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>())).Returns(valuesToReturn.Dequeue);
 
             //Only allow save of hash "124"
-            _keyValueStoreMock.Setup(o => o.TrySetValue<TestState>(It.IsAny<string>(), It.IsAny<TestState>(), It.IsAny<string>()))
+            _keyValueStoreMock.Setup(o => o.TrySetValue(It.IsAny<string>(), It.IsAny<TestState>(), It.IsAny<string>()))
                 .Returns((string key, TestState value, string hash) => hash == "124");
 
             var locksReturnSequence = new Queue<bool>();
@@ -341,7 +330,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             //Act
 
-            await _sagaMachine.Handle(new HelloMessage { });
+            await _sagaMachine.Handle(new HelloMessage());
             //Assert
             _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.OfType<GoodbyeMessage>().Any(m => m.Message == "FreshVersion"))), Times.Once);
             _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.OfType<GoodbyeMessage>().Any(m => m.Message == "StaleVersion"))), Times.Never);
@@ -359,7 +348,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             _keyValueStoreMock.Setup(o => o.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
             _sagaMachine
                .WithMessage<HelloMessage>((proccess, msg) => proccess
-                   .InitialiseState((inMsg) => new TestState
+                   .InitialiseState(inMsg => new TestState
                    {
                        SagaInstanceId = Guid.NewGuid()
                    })
@@ -369,7 +358,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             //Act
 
-            await _sagaMachine.Handle(new HelloMessage { });
+            await _sagaMachine.Handle(new HelloMessage());
             //Assert
             _keyValueStoreMock.Verify(o => o.Remove(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
@@ -392,7 +381,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             // We need the below to set the return value
             _keyValueStoreMock.Setup(kv => kv.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
-            Func<IEnumerable<ISagaMessageIdentifier>, Task> publisher = async (messages) =>
+            Func<IEnumerable<ISagaMessageIdentifier>, Task> publisher = async messages =>
             {
                 foreach (var message in messages)
                 {
@@ -415,8 +404,8 @@ namespace Aqovia.Utilities.SagaMachine.Tests
                    .Execute()
                );
 
-            var exception = Assert.ThrowsAnyAsync<Exception>(() => _sagaMachine.Handle(new HelloMessage()));
-            exception.Wait();
+            Func<Task> act = async () => { await _sagaMachine.Handle(new HelloMessage()).ConfigureAwait(false); };
+            act.ShouldThrow<Exception>();
 
             //Assert
             _keyValueStoreMock.Verify(o => o.TrySetValue(It.IsAny<string>(), It.IsAny<TestState>(), It.IsAny<string>()), Times.Never);
@@ -424,7 +413,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         }
 
         [Fact]
-        public void SagaMachine_RequestLock_When_Executed()
+        public async void SagaMachine_RequestLock_When_Executed()
         {
             // Arrange
             string dummyToken;
@@ -440,7 +429,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             // Act
             _sagaMachine.WithMessage<HelloMessage>((proccess, msg) => proccess.Execute());
-            _sagaMachine.Handle(new HelloMessage()).Wait();
+            await _sagaMachine.Handle(new HelloMessage());
 
             // Assert
             
@@ -448,7 +437,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         }
 
         [Fact]
-        public void SagaMachine_WhenSucessfullyAcquiredLock_ReleaseLock()
+        public async void SagaMachine_WhenSucessfullyAcquiredLock_ReleaseLock()
         {
             // Arrange
             string dummyToken = "unique-token-id";
@@ -464,7 +453,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
 
             // Act
             _sagaMachine.WithMessage<HelloMessage>((proccess, msg) => proccess.Execute());
-            _sagaMachine.Handle(new HelloMessage()).Wait();
+            await _sagaMachine.Handle(new HelloMessage());
 
             // Assert
             _keyValueStoreMock.Verify(kv => kv.ReleaseLock(It.IsAny<string>(), dummyToken), Times.Once);
