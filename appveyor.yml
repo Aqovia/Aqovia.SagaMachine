@@ -30,7 +30,9 @@ before_build:
 configuration: Release
 
 build:
-  parallel: true
+  publish_nuget: true
+  publish_nuget_symbols: true
+  include_nuget_references: true
   verbosity: minimal
   
 deploy:
