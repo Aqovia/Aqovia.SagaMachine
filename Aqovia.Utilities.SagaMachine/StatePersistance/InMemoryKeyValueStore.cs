@@ -17,10 +17,10 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
             internal DateTime Expiry { get; set; }
         }
 
-        private readonly ConcurrentDictionary<string, HashedValue<object>> _inMemoryStore = new ConcurrentDictionary<string, HashedValue<object>>();
+        public readonly ConcurrentDictionary<string, HashedValue<object>> InMemoryStore = new ConcurrentDictionary<string, HashedValue<object>>();
         private readonly ConcurrentDictionary<string, LockElement> _lockDictionary = new ConcurrentDictionary<string, LockElement>();
 
-        private static string GetMmd5Hash(object valueElement)
+        public static string GetMmd5Hash(object valueElement)
         {
             var serializedValue = JsonConvert.SerializeObject(valueElement).GetHashCode().ToString();
             using (MD5 md5Hash = MD5.Create())
@@ -40,31 +40,31 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         public HashedValue<T> GetValue<T>(string key)
         {
             HashedValue<object> valueElement;
-            _inMemoryStore.TryGetValue(key, out valueElement);
+            InMemoryStore.TryGetValue(key, out valueElement);
 
-            if (!(valueElement is HashedValue<T>))
+            if (valueElement != null && !(valueElement.Value is T))
             {
                 throw new Exception("Type mismatch between T and retrieved object type");
             }
 
-            return valueElement as HashedValue<T>;
+            return valueElement == null ? null : new HashedValue<T>{Value = (T)valueElement.Value, Hash = valueElement.Hash};
         }
 
         public bool TrySetValue<T>(string key, T value, string oldHash)
         {
             if (string.IsNullOrEmpty(oldHash))
             {
-                return _inMemoryStore.TryAdd(key, new HashedValue<object> { Value = value, Hash = GetMmd5Hash(value) });
+                return InMemoryStore.TryAdd(key, new HashedValue<object> { Value = value, Hash = GetMmd5Hash(value) });
             }
 
             lock (UniqueLockingObj)
             {
                 HashedValue<object> existingValue;
-                if (_inMemoryStore.TryGetValue(key, out existingValue))
+                if (InMemoryStore.TryGetValue(key, out existingValue))
                 {
                     if (existingValue.Hash.Equals(oldHash, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        return _inMemoryStore.TryUpdate(key,
+                        return InMemoryStore.TryUpdate(key,
                             new HashedValue<object> {Value = value, Hash = GetMmd5Hash(value)}, existingValue);
                     }
                 }
@@ -78,11 +78,11 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
             lock (UniqueLockingObj)
             {
                 HashedValue<object> existingValue;
-                if (_inMemoryStore.TryGetValue(key, out existingValue))
+                if (InMemoryStore.TryGetValue(key, out existingValue))
                 {
                     if (existingValue.Hash.Equals(oldHash, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        return _inMemoryStore.TryRemove(key, out existingValue);
+                        return InMemoryStore.TryRemove(key, out existingValue);
                     }
                 }
             }
@@ -93,7 +93,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         public void Remove(string key)
         {
             HashedValue<object> existingValue;
-            _inMemoryStore.TryRemove(key, out existingValue);
+            InMemoryStore.TryRemove(key, out existingValue);
         }
 
         public TimeSpan Ping()
@@ -103,9 +103,8 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
         public bool StoreEmpty()
         {
-            return !_inMemoryStore.Any();
+            return !InMemoryStore.Any();
         }
-
 
         public bool TakeLockWithDefaultExpiryTime(string key, out string lockToken)
         {
