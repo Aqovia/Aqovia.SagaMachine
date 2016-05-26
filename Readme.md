@@ -2,7 +2,7 @@
 
 A utility for orchestrating sagas across a message bus, using Redis for state persistence.
 
-[![Build status](https://ci.appveyor.com/api/projects/status/pi0fyl6v11c899lo/branch/master?svg=true)](https://ci.appveyor.com/project/aqovia/aqovia-sagamachine/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/pi0fyl6v11c899lo/branch/master?svg=true)](https://ci.appveyor.com/project/aqovia/aqovia-sagamachine/branch/master) [![NuGet Badge](https://buildstats.info/nuget/aqovia.sagamachine)](https://www.nuget.org/packages/aqovia.sagamachine/)
 
 
 ## Getting started
