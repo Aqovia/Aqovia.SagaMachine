@@ -3,16 +3,22 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.Utilities.SagaMachine", "Aqovia.Utilities.SagaMachine\Aqovia.Utilities.SagaMachine.csproj", "{7CE30410-ABD4-440F-9471-D2727916D31E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.Utilities.SagaMachine", "src\Aqovia.Utilities.SagaMachine\Aqovia.Utilities.SagaMachine.csproj", "{7CE30410-ABD4-440F-9471-D2727916D31E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.Utilities.SagaMachine.Tests", "Aqovia.Utilities.SagaMachine.Tests\Aqovia.Utilities.SagaMachine.Tests.csproj", "{815EBB8E-B3A7-4E0F-A164-DCE67EB406F6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.Utilities.SagaMachine.Tests", "tests\Aqovia.Utilities.SagaMachine.Tests\Aqovia.Utilities.SagaMachine.Tests.csproj", "{815EBB8E-B3A7-4E0F-A164-DCE67EB406F6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.Utilities.SagaMachine.IntegrationTests", "Aqovia.Utilities.SagaMachine.IntegrationTests\Aqovia.Utilities.SagaMachine.IntegrationTests.csproj", "{1F0A6D73-A832-4FB8-9DBF-744B07E6D50F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.Utilities.SagaMachine.IntegrationTests", "tests\Aqovia.Utilities.SagaMachine.IntegrationTests\Aqovia.Utilities.SagaMachine.IntegrationTests.csproj", "{1F0A6D73-A832-4FB8-9DBF-744B07E6D50F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CEAAF6EB-729C-4806-9389-2EEB97CFAFBE}"
 	ProjectSection(SolutionItems) = preProject
 		Readme.md = Readme.md
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{82D942C7-AB01-447F-89CD-4C75F308EDE9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{79ED9B10-7DE8-4F4E-8601-6719B57D0E7C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{5474D1CC-8CB4-4501-ADF3-0F47D4C0FCAF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,5 +41,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7CE30410-ABD4-440F-9471-D2727916D31E} = {82D942C7-AB01-447F-89CD-4C75F308EDE9}
+		{815EBB8E-B3A7-4E0F-A164-DCE67EB406F6} = {79ED9B10-7DE8-4F4E-8601-6719B57D0E7C}
+		{1F0A6D73-A832-4FB8-9DBF-744B07E6D50F} = {79ED9B10-7DE8-4F4E-8601-6719B57D0E7C}
 	EndGlobalSection
 EndGlobal
