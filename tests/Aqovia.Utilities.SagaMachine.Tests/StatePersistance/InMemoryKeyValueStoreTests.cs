@@ -116,8 +116,11 @@ namespace Aqovia.Utilities.SagaMachine.Tests.StatePersistance
             // Arrange
             _inMemoryStore.InMemoryStore.TryAdd("existing-key", new HashedValue<object> { Value = "existing-value", Hash = "existing-hash" });
 
-            // Act and Assert
-            Assert.ThrowsAny<Exception>(() => _inMemoryStore.GetValue<DateTime>("existing-key"));
+            Action act = () =>
+            {
+                _inMemoryStore.GetValue<DateTime>("existing-key");
+            };
+            act.ShouldThrow<Exception>();
         }
 
         [Fact]
