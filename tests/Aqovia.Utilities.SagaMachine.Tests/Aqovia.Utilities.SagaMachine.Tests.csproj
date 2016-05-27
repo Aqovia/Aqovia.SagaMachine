@@ -64,6 +64,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StateMachineTests.cs" />
+    <Compile Include="StatePersistance\InMemoryKeyValueStoreTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aqovia.Utilities.SagaMachine\Aqovia.Utilities.SagaMachine.csproj">

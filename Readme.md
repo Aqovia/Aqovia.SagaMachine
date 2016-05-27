@@ -2,7 +2,7 @@
 
 A utility for orchestrating sagas across a message bus, using Redis for state persistence.
 
-[![Build status](https://ci.appveyor.com/api/projects/status/pi0fyl6v11c899lo/branch/master?svg=true)](https://ci.appveyor.com/project/aqovia/aqovia-sagamachine/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/pi0fyl6v11c899lo/branch/master?svg=true)](https://ci.appveyor.com/project/aqovia/aqovia-sagamachine/branch/master) [![NuGet Badge](https://buildstats.info/nuget/aqovia.sagamachine)](https://www.nuget.org/packages/aqovia.sagamachine/)
 
 
 ## Getting started
@@ -14,7 +14,13 @@ We are assuming you're using the [Nimbus](https://github.com/NimbusAPI/Nimbus) S
 ```
     builder.Register<IEventLoggerFactory>(c => new EventLoggerFactory(LogManager.GetLogger("ServiceLogger"), new Dictionary<string,object>())); 
 ```
-* Register the IKeyValueStore in your IOC container. The library ships with a Redis RedisKeyValueStore implementation 
+* Register the IKeyValueStore in your IOC container as a singleton. The library is shipped with two implementations:
+
+| Implementation        | Description                                                                                                               |
+|-----------------------|---------------------------------------------------------------------------------------------------------------------------|
+| RedisKeyValueStore    | Intended for production use. We recommend that Redis is configured to be disk-backed so that your Saga state are durable  |
+| InMemoryKeyValueStore | Intended for unit-testing. Can also be used in production scenarios where state need not be durable and Sagas run on a single, non-concurrent host.                                                                                                |
+
 ```
     builder.RegisterType<RedisKeyValueStore>().As<IKeyValueStore>().SingleInstance();
 ```
