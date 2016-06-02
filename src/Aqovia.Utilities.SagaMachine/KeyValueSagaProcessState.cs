@@ -8,7 +8,6 @@ namespace Aqovia.Utilities.SagaMachine
 {    
     public class KeyValueSagaProcessState<TIncomingMessage, TState> : ISagaProcessState<TIncomingMessage, TState> where TIncomingMessage : ISagaMessageIdentifier where TState : ISagaIdentifier
     {
-
         private readonly TIncomingMessage _incomingMessage;
         private readonly IKeyValueStore _keyValueStore;
         private readonly Func<IEnumerable<ISagaMessageIdentifier>, Task> _messagePublisher;
@@ -17,7 +16,7 @@ namespace Aqovia.Utilities.SagaMachine
         private bool _needToDeleteState;
         private readonly List<ISagaMessageIdentifier> _messagesToPublish;
         private readonly SagaLogState _logState;
-        private IEventLoggerFactory _eventLoggerFactory;
+        private readonly IEventLoggerFactory _eventLoggerFactory;
 
         public KeyValueSagaProcessState(TIncomingMessage incomingMessage, IKeyValueStore keyValueStore, Func<IEnumerable<ISagaMessageIdentifier>, Task> messagePublisher, IEventLoggerFactory eventLoggerFactory)
         {
@@ -31,7 +30,7 @@ namespace Aqovia.Utilities.SagaMachine
 
         public ISagaProcessState<TIncomingMessage, TState> InitialiseState(Func<TIncomingMessage, TState> initFunc)
         {
-            TState stateInit =  initFunc(_incomingMessage);            
+            var stateInit =  initFunc(_incomingMessage);            
             if (stateInit.SagaInstanceId==default(Guid) )
                 throw new SagaException("Expected InitialiseState to set SagaInstanceId");
             _currentState = new HashedValue<TState>
@@ -62,7 +61,6 @@ namespace Aqovia.Utilities.SagaMachine
             _needToSaveState = true;
             return this;
         }
-
 
         public ISagaProcessPublish<TIncomingMessage, TState> PublishIf(Func<TIncomingMessage, TState, IEnumerable<ISagaMessageIdentifier>> state, Func<TIncomingMessage, TState, bool> conditional)
         {
@@ -127,16 +125,19 @@ namespace Aqovia.Utilities.SagaMachine
         {
             return ExecuteAsync().Result;
         }
+
         private async Task<ISagaDefined> ExecuteAsync()
         {
-            LoadStateIfNecessary();
+            var uniqueLockToken = Guid.NewGuid();
+            var sagaId = _incomingMessage.SagaInstanceId.ToString();
 
-            string uniqueLockToken;
-            var isLocked = _keyValueStore.TakeLockWithDefaultExpiryTime(_currentState.Value.SagaInstanceId.ToString(), out uniqueLockToken);
+            var isLocked = await _keyValueStore.TakeLockWithDefaultExpiryTime(sagaId, uniqueLockToken);
             if (!isLocked)
             {
                 throw new SagaHasConcurrentLockException("A concurrent SagaMachine has already locked the saga");
             }
+
+            LoadStateIfNecessary();
 
             foreach (var logStateMessage in _logState.GetLogMessages())
             {
@@ -180,12 +181,12 @@ namespace Aqovia.Utilities.SagaMachine
             }
             finally
             {
-                _keyValueStore.ReleaseLock(_currentState.Value.SagaInstanceId.ToString(), uniqueLockToken);
+                _keyValueStore.ReleaseLock(_currentState.Value.SagaInstanceId.ToString(), uniqueLockToken).ConfigureAwait(false).GetAwaiter().GetResult();
             }
             
             return null;
         }
-        
+
         private void LoadStateIfNecessary()
         {
             if (_currentState != null) return;
@@ -204,7 +205,6 @@ namespace Aqovia.Utilities.SagaMachine
             {
                 throw new SagaStateStaleException("State has since changed. Can't save");
             }
-            
         }
     }
 }

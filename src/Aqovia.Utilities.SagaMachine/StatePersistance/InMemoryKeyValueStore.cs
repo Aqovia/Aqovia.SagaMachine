@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace Aqovia.Utilities.SagaMachine.StatePersistance
@@ -106,26 +107,25 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
             return !InMemoryStore.Any();
         }
 
-        public bool TakeLockWithDefaultExpiryTime(string key, out string lockToken)
+        public async Task<bool> TakeLockWithDefaultExpiryTime(string key, Guid lockToken)
         {
-            return TakeLock(key, out lockToken, 500);
+            return await TakeLock(key, lockToken, 500);
         }
 
-        public bool TakeLock(string key, out string lockToken, double milliseconds)
+        public async Task<bool> TakeLock(string key, Guid lockToken, double milliseconds)
         {
             LockElement lockElement;
             if (!_lockDictionary.TryGetValue(key, out lockElement))
             {
                 lockElement = new LockElement
                 {
-                    LockToken = Guid.NewGuid(),
+                    LockToken = lockToken,
                     Expiry = DateTime.UtcNow.AddMilliseconds(milliseconds)
                 };
 
-                lockToken = lockElement.LockToken.ToString();
-                _lockDictionary.TryAdd(key, lockElement);
+                var result = _lockDictionary.TryAdd(key, lockElement);
 
-                return true;
+                return result;
             }
             else
             {
@@ -137,18 +137,16 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
                         Expiry = DateTime.UtcNow.AddMilliseconds(milliseconds)
                     };
 
-                    lockToken = lockElement.LockToken.ToString();
-                    _lockDictionary.TryUpdate(key, newLockElement, lockElement);
+                    var result = _lockDictionary.TryUpdate(key, newLockElement, lockElement);
 
-                    return true;
+                    return result;
                 }
             }
 
-            lockToken = null;
             return false;
         }
 
-        public bool ReleaseLock(string key, string lockToken)
+        public async Task<bool> ReleaseLock(string key, Guid lockToken)
         {
             LockElement token;
             return _lockDictionary.TryRemove(key, out token);
