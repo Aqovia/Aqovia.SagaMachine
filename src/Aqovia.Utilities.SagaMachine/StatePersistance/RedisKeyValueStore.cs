@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using StackExchange.Redis;
@@ -36,6 +38,12 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         {
             IDatabase db = _redis.GetDatabase(_redisConfiguration.Database);
             return db;
+        }
+
+        public IServer GetServer()
+        {
+            var t = _redis.GetEndPoints(true).First();
+            return _redis.GetServer(t);
         }
 
         public HashedValue<T> GetValue<T>(string key)
@@ -130,53 +138,58 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         /// <returns></returns>
         public async Task<bool> TakeLock(string key, Guid lockToken, double milliseconds)
         {
-            var retryCount = 3;
+            var maxRetryAttempt = 3;
             var currentRetry = 0;
             var db = GetDatabase();
 
             while(true)
             {
+                currentRetry++;
+
                 try
-                {        
-                    var transac = db.CreateTransaction();
-                    transac.AddCondition(Condition.KeyExists(key));
+                {
+                    var redisLockKey = string.Format("lock_{0}", key);
+                    
+                    var trans = db.CreateTransaction();
+                    trans.AddCondition(Condition.KeyNotExists(redisLockKey));
+                    var acquireLockTask = trans.LockTakeAsync(redisLockKey, lockToken.ToString(), TimeSpan.MaxValue).ConfigureAwait(false);
+                    var setExpiryTimeTask = trans.KeyExpireAsync(redisLockKey, TimeSpan.FromMilliseconds(milliseconds)).ConfigureAwait(false);
+                    trans.Execute();
 
-                    var result = await transac.LockTakeAsync(key, lockToken.ToString(), TimeSpan.FromMilliseconds(milliseconds)).ConfigureAwait(false);
+                    var hasLock = await acquireLockTask;
+                    var hasSucceedToSetExpiryTime = await setExpiryTimeTask;
 
-                    if (result)
+                    if (!hasSucceedToSetExpiryTime)
+                    {
+                        // Note: this should never happen, however to be safe we handle this very improbable case
+                        throw new Exception(string.Format("Unable to set expiry time for Redis key \"{0}\". Key needs to be removed manually from Redis.", redisLockKey));
+                    }
+
+                    if (currentRetry > maxRetryAttempt)
+                    {
+                        return hasLock;
+                    }
+
+                    if (hasLock)
                     {
                         return true;
                     }
-
-                    if (currentRetry > retryCount)
-                    {
-                        // If this is not a transient error 
-                        // or we should not retry re-throw the exception. 
-                        return false;
-                    }
-
-                    currentRetry++;
                 }
-                catch (Exception)
+                catch (TaskCanceledException)
                 {
-                    currentRetry++;
-
-                    // Check if the exception thrown was a transient exception
-                    // based on the logic in the error detection strategy.
+                    // LockTakeAsync throws a TaskCanceledException when it fails to acquire the lock
+                    // If failed then retry based on the logic in the error detection strategy
                     // Determine whether to retry the operation, as well as how 
                     // long to wait, based on the retry strategy.
-                    if (currentRetry > retryCount)
+                    if (currentRetry > maxRetryAttempt)
                     {
-                        // If this is not a transient error 
-                        // or we should not retry re-throw the exception. 
-                        throw;
+                        return false;
                     }
                 }
 
                 // Wait to retry the operation.
                 // Consider calculating an exponential delay here and 
                 // using a strategy best suited for the operation and fault.
-
                 await Task.Delay(((int)Math.Pow(3, currentRetry)) * 500).ConfigureAwait(false);
             }
         }
@@ -185,10 +198,8 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         {
             var db = GetDatabase();
 
-            var transac = db.CreateTransaction();
-            transac.AddCondition(Condition.KeyExists(key));
-
-            return await transac.LockReleaseAsync(key, lockToken.ToString()).ConfigureAwait(false);
+            var redisLockKey = string.Format("lock_{0}", key);
+            return await db.LockReleaseAsync(redisLockKey, lockToken.ToString()).ConfigureAwait(false);
         }
 
         public void Dispose()
