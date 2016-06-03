@@ -188,7 +188,7 @@ namespace Aqovia.Utilities.SagaMachine.IntegrationTests
         }
 
         [Fact]
-        public async void ReleasingLockShoudlSucceed()
+        public async void ReleasingLockShouldSucceed()
         {
             // Arrange
             const string key = "integration-test-key";
@@ -208,7 +208,7 @@ namespace Aqovia.Utilities.SagaMachine.IntegrationTests
         }
 
         [Fact]
-        public async void ReleasingLockWithWrongTokenShoudlFail()
+        public async void ReleasingLockWithWrongTokenShouldFail()
         {
             // Arrange
             const string key = "integration-test-key";
@@ -229,7 +229,7 @@ namespace Aqovia.Utilities.SagaMachine.IntegrationTests
         }
 
         [Fact]
-        public async void ReleasingExhaustedLockShoudlFail()
+        public async void ReleasingExhaustedLockShouldFail()
         {
             // Arrange
             const string key = "integration-test-key";
