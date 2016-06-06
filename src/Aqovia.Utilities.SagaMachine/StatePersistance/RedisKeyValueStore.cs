@@ -147,7 +147,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
                     var trans = db.CreateTransaction();
                     trans.AddCondition(Condition.KeyNotExists(redisLockKey));
                     var acquireLockTask = trans.LockTakeAsync(redisLockKey, lockToken.ToString(), TimeSpan.MaxValue).ConfigureAwait(false);
-                    var setExpiryTimeTask = trans.KeyExpireAsync(redisLockKey, TimeSpan.FromMilliseconds(milliseconds)).ConfigureAwait(false);
+                    var setExpiryTimeTask = trans.KeyExpireAsync(redisLockKey, TimeSpan.FromMilliseconds(milliseconds)).ConfigureAwait(false); /* This is added to workaround bug discovered in the Redis client. Remove this line if bug resolved. Detail can be found here: https://github.com/StackExchange/StackExchange.Redis/issues/415 */
                     trans.Execute();
 
                     var hasLock = await acquireLockTask;
