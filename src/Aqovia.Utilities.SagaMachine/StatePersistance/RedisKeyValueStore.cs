@@ -132,7 +132,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         /// <returns></returns>
         public async Task<bool> TakeLock(string key, Guid lockToken, double milliseconds)
         {
-            var maxRetryAttempt = 3;
+            var maxNumberOfAttempts = 3;
             var currentRetry = 0;
             var db = GetDatabase();
 
@@ -159,7 +159,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
                         throw new Exception(string.Format("Unable to set expiry time for Redis key \"{0}\". Key needs to be removed manually from Redis.", redisLockKey));
                     }
 
-                    if (currentRetry > maxRetryAttempt)
+                    if (currentRetry > maxNumberOfAttempts)
                     {
                         return hasLock;
                     }
@@ -175,7 +175,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
                     // If failed then retry based on the logic in the error detection strategy
                     // Determine whether to retry the operation, as well as how 
                     // long to wait, based on the retry strategy.
-                    if (currentRetry > maxRetryAttempt)
+                    if (currentRetry > maxNumberOfAttempts)
                     {
                         return false;
                     }
