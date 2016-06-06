@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Aqovia.Utilities.SagaMachine.StatePersistance;
+using StackExchange.Redis;
 using Xunit;
 
 namespace Aqovia.Utilities.SagaMachine.IntegrationTests
@@ -115,6 +117,137 @@ namespace Aqovia.Utilities.SagaMachine.IntegrationTests
         public void PingShouldSucceed()
         {
             _store.Ping().Should().NotBe(default(TimeSpan));
+        }
+
+        [Fact]
+        public async void TakingLockShouldSucceed()
+        {
+            // Arrange
+            const string key = "integration-test-key";
+            _store.Remove(key);
+
+            _store.TrySetValue(key, "dummy-value", null);
+            _cleanupKeys.Add(key);
+
+            // Act
+            Guid token = Guid.NewGuid();
+            var hasLock = await _store.TakeLock(key, token, 1000);
+
+            await _store.ReleaseLock(key, token);
+
+            // Assert
+            hasLock.Should().BeTrue();
+        }
+
+        [Fact]
+        public async void ConcurrentTakeLockShouldFail()
+        {
+            // Arrange
+            const string key = "integration-test-key";
+            _store.Remove(key);
+
+            _store.TrySetValue(key, "dummy-value", null);
+            _cleanupKeys.Add(key);
+
+            // Act
+            var tokenFirst = Guid.NewGuid();
+            await _store.TakeLock(key, tokenFirst, 30000);
+
+            var tokenSecond = Guid.NewGuid();
+            var hasLockSecond = await _store.TakeLock(key, tokenSecond, 1);
+
+            await _store.ReleaseLock(key, tokenFirst);
+
+            // Assert
+            hasLockSecond.Should().BeFalse();
+        }
+
+        [Fact]
+        public async void ConcurrentTakeLockWhenLockIsExhaustedShouldSucceed()
+        {
+            // Arrange
+            const string key = "integration-test-key";
+            _store.Remove(key);
+
+            _store.TrySetValue(key, "dummy-value", null);
+            _cleanupKeys.Add(key);
+
+            // Act
+            var tokenFirst = Guid.NewGuid();
+            await _store.TakeLock(key, tokenFirst, 10);
+
+            await Task.Delay(100);
+
+            var tokenSecond = Guid.NewGuid();
+            var hasLockSecond = await _store.TakeLock(key, tokenSecond, 1);
+
+            await _store.ReleaseLock(key, tokenSecond);
+
+            // Assert
+            hasLockSecond.Should().BeTrue();
+        }
+
+        [Fact]
+        public async void ReleasingLockShouldSucceed()
+        {
+            // Arrange
+            const string key = "integration-test-key";
+            _store.Remove(key);
+
+            _store.TrySetValue(key, "dummy-value", null);
+            _cleanupKeys.Add(key);
+
+            // Act
+            Guid token = Guid.NewGuid();
+            await _store.TakeLock(key, token, 1000);
+
+            var hasReleasedLock = await _store.ReleaseLock(key, token);
+
+            // Assert
+            hasReleasedLock.Should().BeTrue();
+        }
+
+        [Fact]
+        public async void ReleasingLockWithWrongTokenShouldFail()
+        {
+            // Arrange
+            const string key = "integration-test-key";
+            _store.Remove(key);
+
+            _store.TrySetValue(key, "dummy-value", null);
+            _cleanupKeys.Add(key);
+
+            // Act
+            Guid token = Guid.NewGuid();
+            await _store.TakeLock(key, token, 1000);
+
+            Guid wrongToken = Guid.NewGuid();
+            var hasReleasedLock = await _store.ReleaseLock(key, wrongToken);
+
+            // Assert
+            hasReleasedLock.Should().BeFalse();
+        }
+
+        [Fact]
+        public async void ReleasingExhaustedLockShouldFail()
+        {
+            // Arrange
+            const string key = "integration-test-key";
+            _store.Remove(key);
+
+            _store.TrySetValue(key, "dummy-value", null);
+            _cleanupKeys.Add(key);
+
+            // Act
+            Guid token = Guid.NewGuid();
+            await _store.TakeLock(key, token, 10);
+
+            await Task.Delay(100);
+
+            var hasReleasedLock = await _store.ReleaseLock(key, token);
+
+            // Assert
+            hasReleasedLock.Should().BeFalse();
         }
 
         public void Dispose()

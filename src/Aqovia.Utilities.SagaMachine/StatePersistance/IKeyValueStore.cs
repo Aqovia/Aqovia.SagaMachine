@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Aqovia.Utilities.SagaMachine.StatePersistance
 {
@@ -8,9 +9,9 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         bool TrySetValue<T>(string key, T value, string oldHash);
         bool Remove(string key, string oldHash);
         void Remove(string key);
-        bool TakeLockWithDefaultExpiryTime(string key, out string lockToken);
-        bool TakeLock(string key, out string lockToken, double milliseconds);
-        bool ReleaseLock(string key, string lockToken);
+        Task<bool> TakeLockWithDefaultExpiryTime(string key, Guid lockToken);
+        Task<bool> TakeLock(string key, Guid lockToken, double milliseconds);
+        Task<bool> ReleaseLock(string key, Guid lockToken);
         TimeSpan Ping();
     }
 }

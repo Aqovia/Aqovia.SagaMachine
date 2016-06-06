@@ -61,31 +61,30 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldInitialiseState()
         {
             //Arrange
-            Guid thisId = Guid.NewGuid();
-            _keyValueStoreMock.Setup(o => o.TrySetValue(thisId.ToString(), It.IsAny<TestState>(), string.Empty)).Returns(true);
-
-            string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(thisId.ToString(), out dummyLockToken)).Returns(true);
-            _keyValueStoreMock.Setup(o => o.ReleaseLock(thisId.ToString(), It.IsAny<string>())).Returns(true);
+            var sagaInstanceId = Guid.NewGuid();
+            _keyValueStoreMock.Setup(o => o.TrySetValue(sagaInstanceId.ToString(), It.IsAny<TestState>(), string.Empty)).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(sagaInstanceId.ToString(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(sagaInstanceId.ToString(), It.IsAny<Guid>())).ReturnsAsync(true);
 
             _sagaMachine
                 .WithMessage<HelloMessage>((proccess, msg) => proccess
                     .InitialiseState(hello => new TestState
                     {
                         SomeStateVariable = hello.Message,
-                        SagaInstanceId = thisId
+                        SagaInstanceId = sagaInstanceId
                     })
                     .Execute()
                 );
 
             //Act
-
             await _sagaMachine.Handle(new HelloMessage
             {
-                Message = "Initialised"
+                Message = "Initialised",
+                SagaInstanceId = sagaInstanceId
             });
+
             //Assert
-            _keyValueStoreMock.Verify(o => o.TrySetValue(thisId.ToString(), It.Is<TestState>(state => state.SomeStateVariable == "Initialised"), string.Empty), Times.AtLeastOnce);
+            _keyValueStoreMock.Verify(o => o.TrySetValue(sagaInstanceId.ToString(), It.Is<TestState>(state => state.SomeStateVariable == "Initialised"), string.Empty), Times.AtLeastOnce);
         }
 
         [Fact(DisplayName = "Should not allow InitialiseState without Id")]
@@ -114,9 +113,8 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldPublishConditionalMessages()
         {
             //Arrange
-            string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
-            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
@@ -143,9 +141,8 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldLogConditionaly()
         {
             //Arrange
-            string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
-            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
@@ -173,10 +170,9 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldPopulateSagaId()
         {
             //Arrange
-            Guid sagaInstanceId = Guid.NewGuid();
-            string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(sagaInstanceId.ToString(), out dummyLockToken)).Returns(true);
-            _keyValueStoreMock.Setup(o => o.ReleaseLock(sagaInstanceId.ToString(), It.IsAny<string>())).Returns(true);
+            var sagaInstanceId = Guid.NewGuid();
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(sagaInstanceId.ToString(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(sagaInstanceId.ToString(), It.IsAny<Guid>())).ReturnsAsync(true);
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
                 {
@@ -194,8 +190,11 @@ namespace Aqovia.Utilities.SagaMachine.Tests
                );
 
             //Act
+            await _sagaMachine.Handle(new HelloMessage()
+            {
+                SagaInstanceId = sagaInstanceId
+            });
 
-            await _sagaMachine.Handle(new HelloMessage());
             //Assert
             _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.All(o => o.SagaInstanceId == sagaInstanceId))), Times.Once);
         }
@@ -204,9 +203,8 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldRespondToCorrectMessages()
         {
             //Arrange
-            string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
-            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
@@ -226,8 +224,8 @@ namespace Aqovia.Utilities.SagaMachine.Tests
                );
 
             //Act
-
             await _sagaMachine.Handle(new SomeOtherMessage());
+
             //Assert
             _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.OfType<GoodbyeMessage>().Any())), Times.Never);
         }
@@ -236,9 +234,8 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async Task SagaMachineShouldSaveMutatedState()
         {
             //Arrange
-            string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
-            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
@@ -278,10 +275,11 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         }
 
 
-        [Fact(DisplayName = "Should not publish messages from stale state")]
+        [Fact(DisplayName = "Messages will be re-published if there is a stale state exception")]
         public async Task SagaMachineShouldRetryStaleState()
         {
             //Arrange
+            var sageInstanceId = Guid.NewGuid();
             var valuesToReturn = new Queue<HashedValue<TestState>>();
 
             valuesToReturn.Enqueue(new HashedValue<TestState>
@@ -312,38 +310,39 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             var locksReturnSequence = new Queue<bool>();
             locksReturnSequence.Enqueue(false);
             locksReturnSequence.Enqueue(true);
-            string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(locksReturnSequence.Dequeue);
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(locksReturnSequence.Dequeue);
-            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(locksReturnSequence.Dequeue());
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
             _sagaMachine
                .WithMessage<HelloMessage>((proccess, msg) => proccess
                    .ChangeStateIf((msgForPub, state) => state, (msgForCond, state) => true)
                    .Publish((pubMsg, state) => new[]{ new GoodbyeMessage
                    {
-                       Message = state.SomeStateVariable
+                       Message = state.SomeStateVariable,
+                       SagaInstanceId = sageInstanceId
                    }})
                    .Execute()
                );
 
             //Act
+            await _sagaMachine.Handle(new HelloMessage()
+            {
+                SagaInstanceId = sageInstanceId
+            });
 
-            await _sagaMachine.Handle(new HelloMessage());
             //Assert
+            _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.OfType<GoodbyeMessage>().Any(m => m.Message == "StaleVersion"))), Times.Once);
             _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.OfType<GoodbyeMessage>().Any(m => m.Message == "FreshVersion"))), Times.Once);
-            _mockPublisher.Verify(pub => pub(It.Is<IEnumerable<ISagaMessageIdentifier>>(p => p.OfType<GoodbyeMessage>().Any(m => m.Message == "StaleVersion"))), Times.Never);
-
         }
 
         [Fact(DisplayName = "Should delete state at the end of the saga")]
         public async Task SagaMachineShouldDeleteStateAtEndOfSaga()
         {
             //Arrange
-            string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
-            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
             _keyValueStoreMock.Setup(o => o.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
             _sagaMachine
@@ -367,9 +366,8 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public void SagaMachine_Should_Not_Stop_Saga_If_An_Exception_Happens()
         {
             //Arrange
-            string dummyLockToken;
-            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyLockToken)).Returns(true);
-            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
@@ -416,9 +414,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         public async void SagaMachine_RequestLock_When_Executed()
         {
             // Arrange
-            string dummyToken;
-            _keyValueStoreMock.Setup(kv => kv.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyToken))
-                .Returns(true);
+            _keyValueStoreMock.Setup(kv => kv.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
@@ -432,17 +428,16 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             await _sagaMachine.Handle(new HelloMessage());
 
             // Assert
-            
-            _keyValueStoreMock.Verify(kv => kv.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyToken), Times.Once);
+
+            _keyValueStoreMock.Verify(kv => kv.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>()), Times.Once);
         }
 
         [Fact]
         public async void SagaMachine_WhenSucessfullyAcquiredLock_ReleaseLock()
         {
             // Arrange
-            string dummyToken = "unique-token-id";
-            _keyValueStoreMock.Setup(kv => kv.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), out dummyToken))
-                .Returns(true);
+            _keyValueStoreMock.Setup(kv => kv.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>()))
+                .ReturnsAsync(true);
 
             _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
                 .Returns(new HashedValue<TestState>
@@ -456,7 +451,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             await _sagaMachine.Handle(new HelloMessage());
 
             // Assert
-            _keyValueStoreMock.Verify(kv => kv.ReleaseLock(It.IsAny<string>(), dummyToken), Times.Once);
+            _keyValueStoreMock.Verify(kv => kv.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>()), Times.Once);
         }
     }
 }

@@ -46,7 +46,7 @@ namespace Aqovia.Utilities.SagaMachine
                 }
                 catch (AggregateException ex)
                 {
-                    if(ex.InnerExceptions.All( e => e is SagaStateStaleException || e is SagaHasConcurrentLockException))
+                    if(ex.InnerExceptions.All( e => e is SagaStateStaleException))
                     {
                         //Key value store we read was stale. Try again.
                         retryFailLimit--;
