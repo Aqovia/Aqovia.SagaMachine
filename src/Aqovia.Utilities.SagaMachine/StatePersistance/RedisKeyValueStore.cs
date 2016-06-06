@@ -40,12 +40,6 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
             return db;
         }
 
-        public IServer GetServer()
-        {
-            var t = _redis.GetEndPoints(true).First();
-            return _redis.GetServer(t);
-        }
-
         public HashedValue<T> GetValue<T>(string key)
         {
             IDatabase db = GetDatabase();
