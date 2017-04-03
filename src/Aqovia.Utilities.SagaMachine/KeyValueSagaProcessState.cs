@@ -13,6 +13,7 @@ namespace Aqovia.Utilities.SagaMachine
         private readonly Func<IEnumerable<ISagaMessageIdentifier>, Task> _messagePublisher;
         private HashedValue<TState> _currentState;
         private bool _needToSaveState;
+        private bool _isInitialState;
         private bool _needToDeleteState;
         private readonly List<ISagaMessageIdentifier> _messagesToPublish;
         private readonly SagaLogState _logState;
@@ -37,7 +38,8 @@ namespace Aqovia.Utilities.SagaMachine
             {
                 Value = stateInit,
                 Hash = string.Empty
-            };                                
+            };
+            _isInitialState = true;
             _needToSaveState = true;
             return this;
         }
@@ -169,9 +171,12 @@ namespace Aqovia.Utilities.SagaMachine
 
                 if (_needToDeleteState)
                 {
-                    if (!_keyValueStore.Remove(_currentState.Value.SagaInstanceId.ToString(), _currentState.Hash))
+                    if (_isInitialState == false)
                     {
-                        throw new SagaStateStaleException("State has since changed. Can't remove");
+                        if (!_keyValueStore.Remove(_currentState.Value.SagaInstanceId.ToString(), _currentState.Hash))
+                        {
+                            throw new SagaStateStaleException("State has since changed. Can't remove");
+                        }
                     }
                 }
                 else

@@ -343,8 +343,52 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             //Arrange
             _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
             _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
-
+            _keyValueStoreMock.Setup(o => o.TrySetValue(It.IsAny<string>(), It.IsAny<Object>(), It.IsAny<string>())).Returns(true);
             _keyValueStoreMock.Setup(o => o.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
+                .Returns(new HashedValue<TestState>
+                {
+                    Hash = Guid.Empty.ToString(),
+                    Value = new TestState()
+                });
+
+            _sagaMachine
+               .WithMessage<HelloMessage>((proccess, msg) => proccess
+                   .InitialiseState(inMsg => new TestState
+                   {
+                       SagaInstanceId = Guid.NewGuid()
+                   })
+                   .Execute()
+               );
+
+            _sagaMachine
+               .WithMessage<GoodbyeMessage>((proccess, msg) => proccess
+                   .StopSagaIf((msgStop, state) => true)
+                   .Execute()
+               );
+
+            //Act
+            await _sagaMachine.Handle(new HelloMessage());
+            await _sagaMachine.Handle(new GoodbyeMessage());
+            //Assert
+            _keyValueStoreMock.Verify(o => o.Remove(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact(DisplayName = "Should not delete state (as it won't exist) at the end of the saga if stop saga is with initialisestate")]
+        public async Task SagaMachineShouldNotDeleteStateAtEndOfSagaIfStopSagaIsWithInitialiseState()
+        {
+            //Arrange
+            _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.ReleaseLock(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
+            _keyValueStoreMock.Setup(o => o.TrySetValue(It.IsAny<string>(), It.IsAny<Object>(), It.IsAny<string>())).Returns(true);
+            _keyValueStoreMock.Setup(o => o.Remove(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            _keyValueStoreMock.Setup(o => o.GetValue<TestState>(It.IsAny<string>()))
+                .Returns(new HashedValue<TestState>
+                {
+                    Hash = Guid.Empty.ToString(),
+                    Value = new TestState()
+                });
+
             _sagaMachine
                .WithMessage<HelloMessage>((proccess, msg) => proccess
                    .InitialiseState(inMsg => new TestState
@@ -356,10 +400,9 @@ namespace Aqovia.Utilities.SagaMachine.Tests
                );
 
             //Act
-
             await _sagaMachine.Handle(new HelloMessage());
             //Assert
-            _keyValueStoreMock.Verify(o => o.Remove(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            _keyValueStoreMock.Verify(o => o.Remove(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
