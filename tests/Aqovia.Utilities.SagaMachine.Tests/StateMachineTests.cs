@@ -374,8 +374,8 @@ namespace Aqovia.Utilities.SagaMachine.Tests
             _keyValueStoreMock.Verify(o => o.Remove(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
-        [Fact(DisplayName = "Should not delete state (as it won't exist) at the end of the saga if stop saga is with initialisestate")]
-        public async Task SagaMachineShouldNotDeleteStateAtEndOfSagaIfStopSagaIsWithInitialiseState()
+        [Fact(DisplayName = "Saga state is not saved when Saga is both Initialised and Stopped")]
+        public async Task SagaMachineStateIsNotSavedWhenSagaIsBothInitialisedAndStopped()
         {
             //Arrange
             _keyValueStoreMock.Setup(o => o.TakeLockWithDefaultExpiryTime(It.IsAny<string>(), It.IsAny<Guid>())).ReturnsAsync(true);
