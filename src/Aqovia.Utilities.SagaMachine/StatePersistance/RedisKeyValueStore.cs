@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 using StackExchange.Redis.Extensions.Core.Configuration;
+using StackExchange.Redis.Extensions.LegacyConfiguration;
 
 namespace Aqovia.Utilities.SagaMachine.StatePersistance
 {
@@ -13,7 +14,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         private const double DefaultLockExpiryTime = 30000;
 
 
-        private readonly RedisCachingSectionHandler _redisConfiguration;
+        private readonly RedisConfiguration _redisConfiguration;
         private readonly ConnectionMultiplexer _redis;
 
         public RedisKeyValueStore()
@@ -26,9 +27,9 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
             };
 
-            foreach (RedisHost redisHost in _redisConfiguration.RedisHosts)
+            foreach (RedisHost redisHost in _redisConfiguration.Hosts)
             {
-                configurationOptions.EndPoints.Add(redisHost.Host, redisHost.CachePort);
+                configurationOptions.EndPoints.Add(redisHost.Host, redisHost.Port);
             }
             _redis = ConnectionMultiplexer.Connect(configurationOptions);
 
