@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Aqovia.Utilities.SagaMachine.StatePersistance;
@@ -16,7 +17,8 @@ namespace Aqovia.Utilities.SagaMachine.IntegrationTests
 
         public RedisKeyValueStoreTests()
         {
-            _store = new RedisKeyValueStore();
+            var redisConnectionString = ConfigurationManager.AppSettings["RedisConnectionString"];
+            _store = new RedisKeyValueStore(redisConnectionString);
             _cleanupKeys = new List<string>();
         }
 

@@ -63,14 +63,14 @@
     <Compile Include="StatePersistance\InMemoryKeyValueStoreTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Aqovia.Utilities.SagaMachine\Aqovia.Utilities.SagaMachine.csproj">
-      <Project>{7ce30410-abd4-440f-9471-d2727916d31e}</Project>
-      <Name>Aqovia.Utilities.SagaMachine</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Aqovia.Utilities.SagaMachine\Aqovia.Utilities.SagaMachine.csproj">
+      <Project>{e50a65c6-2a0c-4c1e-8d74-6d6684aa8ae0}</Project>
+      <Name>Aqovia.Utilities.SagaMachine</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

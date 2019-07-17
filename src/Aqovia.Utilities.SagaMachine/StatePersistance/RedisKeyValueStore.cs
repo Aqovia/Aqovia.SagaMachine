@@ -4,40 +4,27 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using StackExchange.Redis;
-using StackExchange.Redis.Extensions.Core.Configuration;
-using StackExchange.Redis.Extensions.LegacyConfiguration;
 
 namespace Aqovia.Utilities.SagaMachine.StatePersistance
 {
     public class RedisKeyValueStore : IKeyValueStore, IDisposable
     {
         private const double DefaultLockExpiryTime = 30000;
-
-
-        private readonly RedisConfiguration _redisConfiguration;
         private readonly ConnectionMultiplexer _redis;
 
-        public RedisKeyValueStore()
+        public RedisKeyValueStore(string redisConnectionString)
         {
-            _redisConfiguration = RedisCachingSectionHandler.GetConfig();
-            var configurationOptions = new ConfigurationOptions
-            {
-                ConnectTimeout = _redisConfiguration.ConnectTimeout,
-                Ssl = _redisConfiguration.Ssl,
+            _redis = ConnectionMultiplexer.Connect(redisConnectionString);
+        }
 
-            };
-
-            foreach (RedisHost redisHost in _redisConfiguration.Hosts)
-            {
-                configurationOptions.EndPoints.Add(redisHost.Host, redisHost.Port);
-            }
-            _redis = ConnectionMultiplexer.Connect(configurationOptions);
-
+        public RedisKeyValueStore(ConfigurationOptions redisConfiguration)
+        {
+           _redis = ConnectionMultiplexer.Connect(redisConfiguration);
         }
 
         private IDatabase GetDatabase()
         {
-            IDatabase db = _redis.GetDatabase(_redisConfiguration.Database);
+            IDatabase db = _redis.GetDatabase();
             return db;
         }
 
