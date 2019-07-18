@@ -2,6 +2,18 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>Aqovia.SagaMachine</PackageId>
+    <Title>Aqovia.Utilities.SagaMachine</Title>
+    <Description>State machine for orchestrating sagas across a message bus using Redis for state persistence.</Description>
+    <Version></Version>
+    <Authors>Aqovia</Authors>
+    <Owners>Aqovia</Owners>
+    <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
+    <LicenseUrl>https://github.com/Aqovia/Aqovia.SagaMachine/blob/master/LICENSE</LicenseUrl>
+    <ProjectUrl>https://github.com/Aqovia/Aqovia.SagaMachine</ProjectUrl>
+    <Copyright>Copyright (c) 2016 Aqovia</Copyright>
+    <Tags>Bus Distributed Redis Machine Message Saga State Service Transaction</Tags>
   </PropertyGroup>
 
   <ItemGroup>

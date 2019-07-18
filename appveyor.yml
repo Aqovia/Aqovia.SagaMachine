@@ -5,6 +5,7 @@
 # Conventions: Major - Increment for breaking change in public interface
 #			   Minor - Increment for backwards-compatible new feature
 #			   Patch - Increment for build (automatically by Appveyor)
+
 version: 3.0.{build}
 
 pull_requests:
@@ -38,11 +39,18 @@ before_build:
 
 configuration: Release
 
-build:
-  publish_nuget: true
-  publish_nuget_symbols: true
-  include_nuget_references: true
-  verbosity: minimal
+build_script:
+  - cmd: dotnet build
+
+after_build:
+  - dotnet pack src\Aqovia.Utilities.SagaMachine\Aqovia.Utilities.SagaMachine.csproj
+  - dotnet pack tests\Aqovia.Utilities.SagaMachine.Tests\Aqovia.Utilities.SagaMachine.Tests.csproj
+  - dotnet pack tests\Aqovia.Utilities.SagaMachine.IntegrationTests\Aqovia.Utilities.SagaMachine.IntegrationTests.csproj
+
+test:
+  assemblies:
+    - 'tests\**\*.Tests.dll'
+    - 'tests\**\*.IntegrationTests.dll'
   
 deploy:
 - provider: NuGet
