@@ -42,16 +42,14 @@ configuration: Release
 build_script:
   - cmd: dotnet build
 
-after_build:
-  - dotnet pack src\Aqovia.Utilities.SagaMachine\Aqovia.Utilities.SagaMachine.csproj
-  - dotnet pack tests\Aqovia.Utilities.SagaMachine.Tests\Aqovia.Utilities.SagaMachine.Tests.csproj
-  - dotnet pack tests\Aqovia.Utilities.SagaMachine.IntegrationTests\Aqovia.Utilities.SagaMachine.IntegrationTests.csproj
-
 test:
   assemblies:
     - 'tests\**\*.Tests.dll'
     - 'tests\**\*.IntegrationTests.dll'
-  
+
+artifacts:
+  - path: 'src\**\*.nupkg'
+
 deploy:
 - provider: NuGet
   api_key:
