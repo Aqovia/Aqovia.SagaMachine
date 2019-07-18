@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -11,6 +12,12 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
     {
         private const double DefaultLockExpiryTime = 30000;
         private readonly ConnectionMultiplexer _redis;
+
+        public RedisKeyValueStore()
+        {
+            var connectionString = ConfigurationManager.AppSettings["SagaKeyValueStoreConnectionString"];
+            _redis = ConnectionMultiplexer.Connect(connectionString);
+        }
 
         public RedisKeyValueStore(string redisConnectionString)
         {

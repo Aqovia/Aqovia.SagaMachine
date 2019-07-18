@@ -17,8 +17,7 @@ namespace Aqovia.Utilities.SagaMachine.IntegrationTests
 
         public RedisKeyValueStoreTests()
         {
-            var redisConnectionString = ConfigurationManager.AppSettings["RedisConnectionString"];
-            _store = new RedisKeyValueStore(redisConnectionString);
+            _store = new RedisKeyValueStore();
             _cleanupKeys = new List<string>();
         }
 
