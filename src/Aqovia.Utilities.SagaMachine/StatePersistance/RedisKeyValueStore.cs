@@ -130,7 +130,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
                 try
                 {
-                    var redisLockKey = string.Format("lock_{0}", key);
+                    var redisLockKey = $"lock_{key}";
                     
                     var trans = db.CreateTransaction();
                     trans.AddCondition(Condition.KeyNotExists(redisLockKey));
@@ -144,7 +144,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
                     if (!hasSucceedToSetExpiryTime)
                     {
                         // Note: this should never happen, however to be safe we handle this very improbable case
-                        throw new Exception(string.Format("Unable to set expiry time for Redis key \"{0}\". Key needs to be removed manually from Redis.", redisLockKey));
+                        throw new Exception($"Unable to set expiry time for Redis key \"{redisLockKey}\". Key needs to be removed manually from Redis.");
                     }
 
                     if (currentRetry > maxNumberOfAttempts)
@@ -180,7 +180,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         {
             var db = GetDatabase();
 
-            var redisLockKey = string.Format("lock_{0}", key);
+            var redisLockKey = $"lock_{key}";
             return await db.LockReleaseAsync(redisLockKey, lockToken.ToString()).ConfigureAwait(false);
         }
 
