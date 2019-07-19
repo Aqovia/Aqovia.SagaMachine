@@ -1,42 +1,37 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using StackExchange.Redis;
-using StackExchange.Redis.Extensions.Core.Configuration;
 
 namespace Aqovia.Utilities.SagaMachine.StatePersistance
 {
     public class RedisKeyValueStore : IKeyValueStore, IDisposable
     {
         private const double DefaultLockExpiryTime = 30000;
-
-
-        private readonly RedisCachingSectionHandler _redisConfiguration;
         private readonly ConnectionMultiplexer _redis;
 
         public RedisKeyValueStore()
         {
-            _redisConfiguration = RedisCachingSectionHandler.GetConfig();
-            var configurationOptions = new ConfigurationOptions
-            {
-                ConnectTimeout = _redisConfiguration.ConnectTimeout,
-                Ssl = _redisConfiguration.Ssl,
+            var connectionString = ConfigurationManager.AppSettings["SagaKeyValueStoreConnectionString"];
+            _redis = ConnectionMultiplexer.Connect(connectionString);
+        }
 
-            };
+        public RedisKeyValueStore(string redisConnectionString)
+        {
+            _redis = ConnectionMultiplexer.Connect(redisConnectionString);
+        }
 
-            foreach (RedisHost redisHost in _redisConfiguration.RedisHosts)
-            {
-                configurationOptions.EndPoints.Add(redisHost.Host, redisHost.CachePort);
-            }
-            _redis = ConnectionMultiplexer.Connect(configurationOptions);
-
+        public RedisKeyValueStore(ConfigurationOptions redisConfiguration)
+        {
+           _redis = ConnectionMultiplexer.Connect(redisConfiguration);
         }
 
         private IDatabase GetDatabase()
         {
-            IDatabase db = _redis.GetDatabase(_redisConfiguration.Database);
+            IDatabase db = _redis.GetDatabase();
             return db;
         }
 
@@ -142,7 +137,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
                 try
                 {
-                    var redisLockKey = string.Format("lock_{0}", key);
+                    var redisLockKey = $"lock_{key}";
                     
                     var trans = db.CreateTransaction();
                     trans.AddCondition(Condition.KeyNotExists(redisLockKey));
@@ -156,7 +151,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
                     if (!hasSucceedToSetExpiryTime)
                     {
                         // Note: this should never happen, however to be safe we handle this very improbable case
-                        throw new Exception(string.Format("Unable to set expiry time for Redis key \"{0}\". Key needs to be removed manually from Redis.", redisLockKey));
+                        throw new Exception($"Unable to set expiry time for Redis key \"{redisLockKey}\". Key needs to be removed manually from Redis.");
                     }
 
                     if (currentRetry > maxNumberOfAttempts)
@@ -192,7 +187,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         {
             var db = GetDatabase();
 
-            var redisLockKey = string.Format("lock_{0}", key);
+            var redisLockKey = $"lock_{key}";
             return await db.LockReleaseAsync(redisLockKey, lockToken.ToString()).ConfigureAwait(false);
         }
 
