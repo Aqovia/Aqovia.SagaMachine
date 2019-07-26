@@ -23,7 +23,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
             {
                 ConnectTimeout = _redisConfiguration.ConnectTimeout,
                 Ssl = _redisConfiguration.Ssl,
-
+                Password = _redisConfiguration.Password
             };
 
             foreach (RedisHost redisHost in _redisConfiguration.RedisHosts)
