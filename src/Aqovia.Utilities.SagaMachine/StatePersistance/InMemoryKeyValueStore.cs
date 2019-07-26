@@ -40,7 +40,8 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
         public HashedValue<T> GetValue<T>(string key)
         {
-            InMemoryStore.TryGetValue(key, out var valueElement);
+            HashedValue<object> valueElement;
+            InMemoryStore.TryGetValue(key, out valueElement);
 
             if (valueElement != null && !(valueElement.Value is T))
             {
@@ -59,7 +60,8 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
             lock (UniqueLockingObj)
             {
-                if (InMemoryStore.TryGetValue(key, out var existingValue))
+                HashedValue<object> existingValue;
+                if (InMemoryStore.TryGetValue(key, out existingValue))
                 {
                     if (existingValue.Hash.Equals(oldHash, StringComparison.InvariantCultureIgnoreCase))
                     {
@@ -76,7 +78,8 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
         {
             lock (UniqueLockingObj)
             {
-                if (InMemoryStore.TryGetValue(key, out var existingValue))
+                HashedValue<object> existingValue;
+                if (InMemoryStore.TryGetValue(key, out existingValue))
                 {
                     if (existingValue.Hash.Equals(oldHash, StringComparison.InvariantCultureIgnoreCase))
                     {
@@ -111,7 +114,8 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
         public async Task<bool> TakeLock(string key, Guid lockToken, double milliseconds)
         {
-            if (!_lockDictionary.TryGetValue(key, out var lockElement))
+            LockElement lockElement;
+            if (!_lockDictionary.TryGetValue(key, out lockElement))
             {
                 lockElement = new LockElement
                 {

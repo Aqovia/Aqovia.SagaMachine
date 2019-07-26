@@ -16,7 +16,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
         private readonly Mock<Func<IEnumerable<ISagaMessageIdentifier>, Task>> _mockPublisher;
         private SagaMachine<TestState> _sagaMachine;
         private readonly Mock<IEventLoggerFactory> _mockEventloggerFactory;
-        private readonly Mock<IEventLogger> _mockEventLogger;
+        private Mock<IEventLogger> _mockEventLogger;
 
         private class TestState : ISagaIdentifier
         {

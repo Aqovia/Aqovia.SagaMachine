@@ -8,7 +8,7 @@ namespace Aqovia.Utilities.SagaMachine
     /// </summary>
     /// <typeparam name="TIncomingMessage">The message type to handle</typeparam>
     /// <typeparam name="TState">The state DTO for this saga</typeparam>
-    public interface ISagaProcessPublish<out TIncomingMessage, out TState> : ISagaProcessStop<TIncomingMessage, TState>
+    public interface ISagaProcessPublish<TIncomingMessage, TState> : ISagaProcessStop<TIncomingMessage, TState>
         where TIncomingMessage : ISagaMessageIdentifier
         where TState : ISagaIdentifier 
     {

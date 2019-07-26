@@ -27,10 +27,15 @@ We are assuming you're using the [Nimbus](https://github.com/NimbusAPI/Nimbus) S
 * Add Redis connection details to your web.config file
 ```
 	<configuration>
-		<appSettings>
-			<add key="SagaKeyValueStoreConnectionString" value="127.0.0.1:6379,ssl=false,allowAdmin=false,connectTimeout=5000" />
-		</appSettings>
-	<configuration>
+		<configSections>
+			<section name="redisCacheClient" type="StackExchange.Redis.Extensions.Core.Configuration.RedisCachingSectionHandler, StackExchange.Redis.Extensions.Core" />
+		</configSections>
+	...
+	<redisCacheClient allowAdmin="true" ssl="false" connectTimeout="5000" database="1">
+		<hosts>
+			<add host="127.0.0.11" cachePort="6380" />
+		</hosts>
+	</redisCacheClient>
 ```
 * Implement the _ISagaMessageIdentifier_ Interface in all your saga Message contracts. Implement IBusEvent for it to work with Nimbus 
 ```
