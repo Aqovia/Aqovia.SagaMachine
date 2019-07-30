@@ -23,12 +23,15 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
             {
                 ConnectTimeout = _redisConfiguration.ConnectTimeout,
                 Ssl = _redisConfiguration.Ssl,
-                Password = _redisConfiguration.Password
+                Password = Environment.ExpandEnvironmentVariables(_redisConfiguration.Password).Trim()
             };
 
             foreach (RedisHost redisHost in _redisConfiguration.RedisHosts)
             {
-                configurationOptions.EndPoints.Add(redisHost.Host, redisHost.CachePort);
+                configurationOptions.EndPoints.Add(
+                    Environment.ExpandEnvironmentVariables(redisHost.Host).Trim(),
+                    redisHost.CachePort
+                );
             }
             _redis = ConnectionMultiplexer.Connect(configurationOptions);
 
