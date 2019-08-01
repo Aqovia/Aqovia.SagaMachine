@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Aqovia.Utilities.SagaMachine.StatePersistance;
@@ -248,6 +249,16 @@ namespace Aqovia.Utilities.SagaMachine.IntegrationTests
 
             // Assert
             hasReleasedLock.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ConstructStoreUsingConnectionStringShouldSucceed()
+        {
+            var connectionString = ConfigurationManager.AppSettings["SagaKeyValueStoreConnectionString"];
+            using (var store = new RedisKeyValueStore(connectionString))
+            {
+                store.Ping();
+            }
         }
 
         public void Dispose()
