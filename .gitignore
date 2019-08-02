@@ -160,3 +160,4 @@ $RECYCLE.BIN/
 *.orig
 **/App_Data/XmlDocument.xml
 Logs/*
+/.vs

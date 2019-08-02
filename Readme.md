@@ -24,8 +24,9 @@ We are assuming you're using the [Nimbus](https://github.com/NimbusAPI/Nimbus) S
 ```
     builder.RegisterType<RedisKeyValueStore>().As<IKeyValueStore>().SingleInstance();
 ```
-* Add Redis connection details to your web.config file
+* If you are using the default constructor, add Redis connection details to your web.config file
 ```
+	<!-- Using a redisCacheClient section -->
 	<configuration>
 		<configSections>
 			<section name="redisCacheClient" type="StackExchange.Redis.Extensions.Core.Configuration.RedisCachingSectionHandler, StackExchange.Redis.Extensions.Core" />

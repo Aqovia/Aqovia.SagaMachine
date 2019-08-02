@@ -34,12 +34,16 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
                 );
             }
             _redis = ConnectionMultiplexer.Connect(configurationOptions);
+        }
 
+        public RedisKeyValueStore(string connectionString)
+        {
+            _redis = ConnectionMultiplexer.Connect(connectionString);
         }
 
         private IDatabase GetDatabase()
         {
-            IDatabase db = _redis.GetDatabase(_redisConfiguration.Database);
+            var db = _redisConfiguration == null ? _redis.GetDatabase() : _redis.GetDatabase(_redisConfiguration.Database);
             return db;
         }
 
