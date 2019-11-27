@@ -17,7 +17,7 @@ namespace Aqovia.Utilities.SagaMachine.IntegrationTests
 
         public RedisKeyValueStoreTests()
         {
-            _store = new RedisKeyValueStore();
+            _store = new RedisKeyValueStore("127.0.0.1:6379,allowAdmin=false,ssl=false,connectTimeout=5000,defaultDatabase=1");
             _cleanupKeys = new List<string>();
         }
 

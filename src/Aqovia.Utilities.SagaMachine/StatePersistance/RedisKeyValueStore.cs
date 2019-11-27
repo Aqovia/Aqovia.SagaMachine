@@ -11,30 +11,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
     public class RedisKeyValueStore : IKeyValueStore, IDisposable
     {
         private const double DefaultLockExpiryTime = 30000;
-
-
-        private readonly RedisCachingSectionHandler _redisConfiguration;
         private readonly ConnectionMultiplexer _redis;
-
-        public RedisKeyValueStore()
-        {
-            _redisConfiguration = RedisCachingSectionHandler.GetConfig();
-            var configurationOptions = new ConfigurationOptions
-            {
-                ConnectTimeout = _redisConfiguration.ConnectTimeout,
-                Ssl = _redisConfiguration.Ssl,
-                Password = Environment.ExpandEnvironmentVariables(_redisConfiguration.Password).Trim()
-            };
-
-            foreach (RedisHost redisHost in _redisConfiguration.RedisHosts)
-            {
-                configurationOptions.EndPoints.Add(
-                    Environment.ExpandEnvironmentVariables(redisHost.Host).Trim(),
-                    redisHost.CachePort
-                );
-            }
-            _redis = ConnectionMultiplexer.Connect(configurationOptions);
-        }
 
         public RedisKeyValueStore(string connectionString)
         {
@@ -43,7 +20,7 @@ namespace Aqovia.Utilities.SagaMachine.StatePersistance
 
         private IDatabase GetDatabase()
         {
-            var db = _redisConfiguration == null ? _redis.GetDatabase() : _redis.GetDatabase(_redisConfiguration.Database);
+            var db = _redis.GetDatabase();
             return db;
         }
 
