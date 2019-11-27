@@ -120,7 +120,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests.StatePersistance
             {
                 _inMemoryStore.GetValue<DateTime>("existing-key");
             };
-            act.ShouldThrow<Exception>();
+            act.Should().Throw<Exception>();
         }
 
         [Fact]

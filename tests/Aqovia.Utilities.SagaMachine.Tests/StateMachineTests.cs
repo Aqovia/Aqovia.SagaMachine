@@ -106,7 +106,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
                     Message = "Initialised"
                 }).ConfigureAwait(false);
             };
-            act.ShouldThrow<SagaException>();
+            act.Should().Throw<SagaException>();
         }
 
         [Fact(DisplayName = "Should only publish conditional met messages")]
@@ -446,7 +446,7 @@ namespace Aqovia.Utilities.SagaMachine.Tests
                );
 
             Func<Task> act = async () => { await _sagaMachine.Handle(new HelloMessage()).ConfigureAwait(false); };
-            act.ShouldThrow<Exception>();
+            act.Should().Throw<Exception>();
 
             //Assert
             _keyValueStoreMock.Verify(o => o.TrySetValue(It.IsAny<string>(), It.IsAny<TestState>(), It.IsAny<string>()), Times.Never);
